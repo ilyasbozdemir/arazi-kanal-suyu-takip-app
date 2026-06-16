@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { Search, Printer, Coins, X, AlertCircle, FileText, CheckCircle2, User } from 'lucide-react'
+import { Search, Printer, User } from 'lucide-react'
+import { useTabStore } from '../store/tabStore'
 
 const turkishToLower = (str: string): string => {
   if (!str) return ''
@@ -39,13 +40,12 @@ export default function Odemeler(): React.JSX.Element {
   const parentRef = useRef<HTMLDivElement>(null)
   const [owners, setOwners] = useState<OwnerSummary[]>([])
   const [search, setSearch] = useState('')
-  const [selectedOwner, setSelectedOwner] = useState<string | null>(null)
-  const [ownerSlips, setOwnerSlips] = useState<OwnerSlip[]>([])
   const [showPrintNotice, setShowPrintNotice] = useState<{
     owner: string
     slips: OwnerSlip[]
   } | null>(null)
   const [kurumAdi, setKurumAdi] = useState('Arazi Kanal Suyu Takip Programı')
+  const { addTab } = useTabStore()
 
   const loadData = async (): Promise<void> => {
     try {
@@ -70,34 +70,8 @@ export default function Odemeler(): React.JSX.Element {
       } else {
         setKurumAdi('Arazi Kanal Suyu Takip Programı')
       }
-
-      // Refresh slips list if an owner is currently open in modal
-      if (selectedOwner) {
-        await loadOwnerSlips(selectedOwner)
-      }
     } catch (e) {
       console.error('Error loading payments summary:', e)
-    }
-  }
-
-  const loadOwnerSlips = async (owner: string): Promise<void> => {
-    try {
-      const slips = await window.api.dbQuery(
-        `
-        SELECT s.id, s.sulama_tarihi, s.sulama_suresi_saat, s.ucret, s.odeme_durumu, s.aciklama,
-               t.mahalle_koy, t.ada, t.parsel, t.kanal_adi,
-               g.ad_soyad
-        FROM sulamalar s
-        JOIN tasinmazlar t ON s.tasinmaz_id = t.id
-        JOIN gorevliler g ON s.gorevli_id = g.id
-        WHERE t.tapu_sahibi = ?
-        ORDER BY s.sulama_tarihi DESC, s.id DESC
-      `,
-        [owner]
-      )
-      setOwnerSlips(slips)
-    } catch (e) {
-      console.error('Error loading slips for owner:', e)
     }
   }
 
@@ -105,43 +79,8 @@ export default function Odemeler(): React.JSX.Element {
     loadData()
   }, [])
 
-  const handleOpenDetails = async (owner: string): Promise<void> => {
-    setSelectedOwner(owner)
-    await loadOwnerSlips(owner)
-  }
-
-  const handleMarkAsPaid = async (slipId: number): Promise<void> => {
-    try {
-      await window.api.dbRun("UPDATE sulamalar SET odeme_durumu = 'Ödendi' WHERE id = ?", [slipId])
-      await loadData()
-    } catch (e: any) {
-      alert('Ödeme kaydedilirken hata oluştu: ' + e.message)
-    }
-  }
-
-  const handlePayAll = async (owner: string): Promise<void> => {
-    const confirmPay = window.confirm(
-      `${owner} isimli kişinin TÜM borçlarını ödendi olarak işaretlemek istediğinize emin misiniz?`
-    )
-    if (!confirmPay) return
-
-    try {
-      await window.api.dbRun(
-        `
-        UPDATE sulamalar 
-        SET odeme_durumu = 'Ödendi' 
-        WHERE id IN (
-          SELECT s.id FROM sulamalar s
-          JOIN tasinmazlar t ON s.tasinmaz_id = t.id
-          WHERE t.tapu_sahibi = ? AND s.odeme_durumu = 'Ödenmedi'
-        )
-      `,
-        [owner]
-      )
-      await loadData()
-    } catch (e: any) {
-      alert('Toplu ödeme alınırken hata oluştu: ' + e.message)
-    }
+  const handleOpenDetails = (owner: string): void => {
+    addTab('profil', { owner })
   }
 
   const handlePrint = (): void => {
@@ -159,9 +98,6 @@ export default function Odemeler(): React.JSX.Element {
     estimateSize: () => 56,
     overscan: 10
   })
-
-  const unpaidSlips = ownerSlips.filter((s) => s.odeme_durumu === 'Ödenmedi')
-  const totalUnpaidAmount = unpaidSlips.reduce((acc, curr) => acc + curr.ucret, 0)
 
   return (
     <div className="space-y-6 h-full flex flex-col no-print">
@@ -330,164 +266,6 @@ export default function Odemeler(): React.JSX.Element {
           )}
         </div>
       </div>
-
-      {/* DETAILED LEDGER / SLIPS MODAL */}
-      {selectedOwner && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
-            {/* Modal Header */}
-            <div className="p-5 border-b border-white/5 flex items-center justify-between">
-              <div className="flex items-center space-x-2.5">
-                <div className="p-2.5 bg-indigo-600/10 text-indigo-400 rounded-xl">
-                  <FileText className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-white">
-                    {selectedOwner} - Borç ve Fiş Detayları
-                  </h3>
-                  <p className="text-xs text-slate-450 mt-0.5">
-                    Kişinin bugüne kadar aldığı tüm sulamaların listesi.
-                  </p>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setSelectedOwner(null)}
-                className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-lg transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 overflow-y-auto flex-1 space-y-4">
-              {/* Debt Warning Banner */}
-              {totalUnpaidAmount > 0 ? (
-                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-start gap-2.5">
-                    <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="text-sm font-bold text-white">
-                        Toplam Gecikmiş Borç Bulunuyor
-                      </h4>
-                      <p className="text-xs text-slate-450 mt-0.5">
-                        Kişiye ait {unpaidSlips.length} ödenmemiş fiş kaydı var. Toplam borç:{' '}
-                        <strong className="text-amber-400">
-                          ₺{' '}
-                          {totalUnpaidAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
-                        </strong>
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handlePayAll(selectedOwner)}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 shadow transition cursor-pointer self-start sm:self-center shrink-0"
-                  >
-                    <Coins className="w-4 h-4" />
-                    <span>Tüm Borçları Kapat</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center gap-2.5">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                  <div>
-                    <h4 className="text-sm font-bold text-white">Borç Bulunmamaktadır</h4>
-                    <p className="text-xs text-slate-450">
-                      Bu kişiye ait tüm sulama fişleri ödenmiştir.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Slips table */}
-              <div className="border border-slate-800 rounded-2xl overflow-hidden">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-slate-950/30 border-b border-slate-800 font-semibold text-slate-400 uppercase tracking-wider text-[10px]">
-                      <th className="py-2.5 px-3">Tarih</th>
-                      <th className="py-2.5 px-3">Mülk Konumu</th>
-                      <th className="py-2.5 px-3">Görevli</th>
-                      <th className="py-2.5 px-3 text-right">Süre (Saat)</th>
-                      <th className="py-2.5 px-3 text-right">Ücret (₺)</th>
-                      <th className="py-2.5 px-3 text-center">Durum</th>
-                      <th className="py-2.5 px-3 text-right">İşlem</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ownerSlips.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="text-center py-6 text-slate-500">
-                          Bu kişiye ait sulama kaydı bulunmuyor.
-                        </td>
-                      </tr>
-                    ) : (
-                      ownerSlips.map((s) => (
-                        <tr
-                          key={s.id}
-                          className="border-b border-slate-800/40 hover:bg-slate-800/10 text-slate-300"
-                        >
-                          <td className="py-2.5 px-3">
-                            {new Date(s.sulama_tarihi).toLocaleDateString('tr-TR')}
-                          </td>
-                          <td className="py-2.5 px-3">
-                            <span className="block font-medium text-slate-200">
-                              Fiş No: {s.ada || '-'} Seri: {s.parsel || '-'}
-                            </span>
-                            <span className="block text-[10px] text-slate-555">
-                              {s.mahalle_koy} | {s.kanal_adi || 'Kanal Belirtilmemiş'}
-                            </span>
-                          </td>
-                          <td className="py-2.5 px-3">{s.ad_soyad}</td>
-                          <td className="py-2.5 px-3 text-right text-indigo-300 font-medium">
-                            {s.sulama_suresi_saat} sa
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-semibold text-white">
-                            ₺ {s.ucret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
-                          </td>
-                          <td className="py-2.5 px-3 text-center">
-                            <span
-                              className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                s.odeme_durumu === 'Ödendi'
-                                  ? 'bg-emerald-500/10 text-emerald-400'
-                                  : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                              }`}
-                            >
-                              {s.odeme_durumu}
-                            </span>
-                          </td>
-                          <td className="py-2.5 px-3 text-right">
-                            {s.odeme_durumu === 'Ödenmedi' && (
-                              <button
-                                onClick={() => handleMarkAsPaid(s.id)}
-                                className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold transition cursor-pointer"
-                              >
-                                Ödeme Al
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="p-4 border-t border-white/5 bg-slate-950/20 flex justify-between items-center">
-              <span className="text-xs text-slate-500">
-                Toplam {ownerSlips.length} Sulama Kaydı
-              </span>
-              <button
-                onClick={() => setSelectedOwner(null)}
-                className="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
-              >
-                Kapat
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* PRINT DIALOG OVERLAY (Debt Statement notification form) */}
       {showPrintNotice && (

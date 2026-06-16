@@ -1,18 +1,27 @@
 import { create } from 'zustand'
 
-export type TabType = 'dashboard' | 'sulamalar' | 'tasinmazlar' | 'gorevliler' | 'ayarlar' | 'odemeler'
+export type TabType =
+  | 'dashboard'
+  | 'sulamalar'
+  | 'tasinmazlar'
+  | 'gorevliler'
+  | 'ayarlar'
+  | 'odemeler'
+  | 'profil'
 
 export interface TabItem {
+  key: string // unique key, e.g. "dashboard", "profil:Ahmet Yılmaz"
   id: TabType
   label: string
+  params?: any // custom arguments like { owner: 'Ahmet Yılmaz' }
 }
 
 interface TabState {
   tabs: TabItem[]
-  activeTab: TabType
-  addTab: (id: TabType) => void
-  closeTab: (id: TabType) => TabType | null // Returns the next active tab ID
-  setActiveTab: (id: TabType) => void
+  activeTabKey: string
+  addTab: (id: TabType, params?: any) => void
+  closeTab: (key: string) => string | null // Returns the next active tab key
+  setActiveTabKey: (key: string) => void
   clearTabs: () => void
 }
 
@@ -30,56 +39,66 @@ export function getTabLabel(id: TabType): string {
       return 'Sulama Görevlileri'
     case 'ayarlar':
       return 'Sistem Ayarları'
+    case 'profil':
+      return 'Kişi Profili'
     default:
       return 'Sekme'
   }
 }
 
 export const useTabStore = create<TabState>((set, get) => ({
-  tabs: [{ id: 'dashboard', label: 'Genel Bakış' }],
-  activeTab: 'dashboard',
+  tabs: [{ key: 'dashboard', id: 'dashboard', label: 'Genel Bakış' }],
+  activeTabKey: 'dashboard',
 
-  addTab: (id) => {
+  addTab: (id, params) => {
     const { tabs } = get()
-    const exists = tabs.some((t) => t.id === id)
+    // Generate unique key for profiles based on the landowner's name
+    const key = id === 'profil' && params?.owner ? `profil:${params.owner}` : id
+    const exists = tabs.some((t) => t.key === key)
 
     if (!exists) {
-      const label = getTabLabel(id)
-      const newTabs = [...tabs, { id, label }]
-      set({ tabs: newTabs, activeTab: id })
+      let label = getTabLabel(id)
+      if (id === 'profil' && params?.owner) {
+        label = `Profil: ${params.owner}`
+      }
+      const newTabs = [...tabs, { key, id, label, params }]
+      set({ tabs: newTabs, activeTabKey: key })
     } else {
-      set({ activeTab: id })
+      set({ activeTabKey: key })
     }
   },
 
-  closeTab: (id) => {
-    if (id === 'dashboard') return null
+  closeTab: (key) => {
+    if (key === 'dashboard') return null
 
-    const { tabs, activeTab } = get()
-    const newTabs = tabs.filter((t) => t.id !== id)
+    const { tabs, activeTabKey } = get()
+    const newTabs = tabs.filter((t) => t.key !== key)
 
-    let nextTab: TabType | null = null
+    let nextKey: string | null = null
 
-    if (activeTab === id) {
+    if (activeTabKey === key) {
       if (newTabs.length > 0) {
-        const index = tabs.findIndex((t) => t.id === id)
+        const index = tabs.findIndex((t) => t.key === key)
         const nextIndex = Math.max(0, index - 1)
-        nextTab = newTabs[nextIndex].id
+        nextKey = newTabs[nextIndex].key
       } else {
-        nextTab = 'dashboard'
-        newTabs.push({ id: 'dashboard', label: 'Genel Bakış' })
+        nextKey = 'dashboard'
+        newTabs.push({ key: 'dashboard', id: 'dashboard', label: 'Genel Bakış' })
       }
     }
 
-    set({ tabs: newTabs, activeTab: nextTab || activeTab })
-    return nextTab
+    set({ tabs: newTabs, activeTabKey: nextKey || activeTabKey })
+    return nextKey
   },
 
-  setActiveTab: (id) => {
-    set({ activeTab: id })
+  setActiveTabKey: (key) => {
+    set({ activeTabKey: key })
   },
 
   clearTabs: () => {
-    set({ tabs: [{ id: 'dashboard', label: 'Genel Bakış' }], activeTab: 'dashboard' })
+    set({
+      tabs: [{ key: 'dashboard', id: 'dashboard', label: 'Genel Bakış' }],
+      activeTabKey: 'dashboard'
+    })
   }
 }))

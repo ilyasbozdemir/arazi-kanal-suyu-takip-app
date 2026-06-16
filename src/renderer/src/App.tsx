@@ -20,7 +20,8 @@ import {
   Coins,
   X,
   Sun,
-  Moon
+  Moon,
+  Search
 } from 'lucide-react'
 
 import Startup from './components/Startup'
@@ -33,12 +34,20 @@ import Odemeler from './components/Odemeler'
 import { Footer } from './components/Footer'
 import { useTabStore } from './store/tabStore'
 import TabsBar from './components/TabsBar'
+import KisiProfil from './components/KisiProfil'
 
 export default function App(): React.JSX.Element {
   const [filePath, setFilePath] = useState<string | null>(null)
   const [isDirty, setIsDirty] = useState(false)
-  const { activeTab, addTab, clearTabs } = useTabStore()
+  const { activeTabKey, tabs, addTab, clearTabs } = useTabStore()
   const [sulamaViewMode, setSulamaViewMode] = useState<'standard' | 'excel'>('standard')
+
+  // Landowners List for global autocomplete search
+  const [uniqueOwners, setUniqueOwners] = useState<string[]>([])
+  const [globalSearchOwner, setGlobalSearchOwner] = useState('')
+
+  const activeTabItem = tabs.find((t) => t.key === activeTabKey)
+  const activeTab = activeTabItem?.id || 'dashboard'
 
   // Institution Settings State
   const [kurumAdi, setKurumAdi] = useState('Arazi Kanal Suyu Takip Programı')
@@ -171,12 +180,36 @@ export default function App(): React.JSX.Element {
       } else {
         setShowSetupModal(false)
       }
+
+      // Load unique owners list
+      await loadUniqueOwners()
     } catch (e) {
       console.error('Error loading settings from DB:', e)
       setKurumAdi('Arazi Kanal Suyu Takip Programı')
       setKurumLogo(null)
     }
   }
+
+  const loadUniqueOwners = async (): Promise<void> => {
+    if (!filePath) return
+    try {
+      const ownersRes = await window.api.dbQuery(
+        'SELECT DISTINCT tapu_sahibi FROM tasinmazlar ORDER BY tapu_sahibi ASC'
+      )
+      if (ownersRes) {
+        setUniqueOwners(ownersRes.map((o: any) => o.tapu_sahibi).filter(Boolean))
+      }
+    } catch (e) {
+      console.error('Error loading unique owners:', e)
+    }
+  }
+
+  // Reload owners whenever active tab changes to keep search list fresh
+  useEffect(() => {
+    if (filePath) {
+      loadUniqueOwners()
+    }
+  }, [activeTabKey, filePath])
 
   // Initial theme load on mount
   useEffect(() => {
@@ -230,6 +263,17 @@ export default function App(): React.JSX.Element {
     }
   }, [])
 
+  const handleSave = async (): Promise<void> => {
+    try {
+      const res = await window.api.saveFile()
+      if (!res.success && res.error) {
+        alert('Kaydetme başarısız: ' + res.error)
+      }
+    } catch (e: any) {
+      alert('Kaydetme sırasında hata oluştu: ' + e.message)
+    }
+  }
+
   // Listen for Ctrl+S / Cmd+S keyboard shortcut to save database file
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -245,17 +289,6 @@ export default function App(): React.JSX.Element {
       window.removeEventListener('keydown', handleKeyDown)
     }
   }, [filePath, isDirty])
-
-  const handleSave = async (): Promise<void> => {
-    try {
-      const res = await window.api.saveFile()
-      if (!res.success && res.error) {
-        alert('Kaydetme başarısız: ' + res.error)
-      }
-    } catch (e: any) {
-      alert('Kaydetme sırasında hata oluştu: ' + e.message)
-    }
-  }
 
   const handleClose = async (): Promise<void> => {
     try {
@@ -399,6 +432,13 @@ export default function App(): React.JSX.Element {
                         <span>Değişiklikleri Kaydet</span>
                       </button>
                       <button
+                        onMouseDown={handleSendBackup}
+                        className="flex items-center space-x-2 w-full px-3 py-2 text-left hover:bg-indigo-600 hover:text-white rounded-lg text-slate-200 transition"
+                      >
+                        <Mail className="h-3.5 w-3.5 text-indigo-400" />
+                        <span>Yedek E-postası Gönder</span>
+                      </button>
+                      <button
                         onMouseDown={() => {
                           handleClose()
                           setActiveMenu(null)
@@ -435,7 +475,7 @@ export default function App(): React.JSX.Element {
                 disabled={!filePath}
                 className={`px-3 py-1 rounded transition cursor-pointer hover:text-[var(--menubar-text-hover)] hover:bg-[var(--menubar-active-bg)] ${activeMenu === 'moduller' ? 'bg-[var(--menubar-active-bg)] text-[var(--menubar-text-hover)]' : ''} ${!filePath ? 'opacity-40 cursor-not-allowed' : ''}`}
               >
-                Görünüm
+                Modüller
               </button>
               {activeMenu === 'moduller' && filePath && (
                 <div className="absolute left-0 mt-1.5 w-56 bg-slate-900 dark:bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-1 z-50">
@@ -544,16 +584,6 @@ export default function App(): React.JSX.Element {
                   >
                     <Grid className="h-3.5 w-3.5" />
                     <span>Excel Tablo Giriş Modu</span>
-                  </button>
-
-                  <div className="h-px bg-white/5 my-1"></div>
-
-                  <button
-                    onMouseDown={handleSendBackup}
-                    className="flex items-center space-x-2 w-full px-3 py-2 text-left hover:bg-indigo-600 hover:text-white rounded-lg transition text-slate-200"
-                  >
-                    <Mail className="h-3.5 w-3.5 text-indigo-400" />
-                    <span>Yedek E-postası Gönder</span>
                   </button>
                 </div>
               )}
@@ -732,6 +762,31 @@ export default function App(): React.JSX.Element {
             </div>
 
             <div className="flex items-center space-x-3 text-[10px]">
+              {/* Global Landowner Profile Search */}
+              <div className="relative flex items-center mr-2">
+                <Search className="absolute left-2.5 h-3.5 w-3.5 text-slate-500" />
+                <input
+                  type="text"
+                  list="global-owner-list"
+                  placeholder="Kişi Dosyası Ara..."
+                  className="pl-8 pr-3 py-1 rounded-lg bg-slate-950/40 border border-white/5 text-[10.5px] text-slate-200 placeholder-slate-500 w-44 focus:w-60 focus:border-indigo-500 transition-all outline-none font-medium"
+                  value={globalSearchOwner}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    setGlobalSearchOwner(val)
+                    if (uniqueOwners.includes(val)) {
+                      addTab('profil', { owner: val })
+                      setGlobalSearchOwner('')
+                    }
+                  }}
+                />
+                <datalist id="global-owner-list">
+                  {uniqueOwners.map((owner) => (
+                    <option key={owner} value={owner} />
+                  ))}
+                </datalist>
+              </div>
+
               {isDirty && (
                 <span className="text-amber-400 font-medium animate-pulse flex items-center gap-1">
                   ⚠️ Kaydedilmemiş Değişiklikler Var
@@ -756,6 +811,9 @@ export default function App(): React.JSX.Element {
             {activeTab === 'tasinmazlar' && <Tasinmazlar />}
             {activeTab === 'gorevliler' && <Gorevliler />}
             {activeTab === 'ayarlar' && <Ayarlar onSettingsSaved={handleSettingsSaved} />}
+            {activeTab === 'profil' && activeTabItem?.params?.owner && (
+              <KisiProfil ownerName={activeTabItem.params.owner} />
+            )}
           </div>
 
           {/* Footer */}
