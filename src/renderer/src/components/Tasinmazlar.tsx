@@ -2,6 +2,19 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Search, Edit2, Trash2, Save, X, Layers, AlertCircle, Plus, Grid, FormInput } from 'lucide-react'
 
+const turkishToLower = (str: string): string => {
+  if (!str) return ''
+  return str
+    .replace(/İ/g, 'i')
+    .replace(/I/g, 'ı')
+    .replace(/Ş/g, 'ş')
+    .replace(/Ç/g, 'ç')
+    .replace(/Ğ/g, 'ğ')
+    .replace(/Ü/g, 'ü')
+    .replace(/Ö/g, 'ö')
+    .toLowerCase()
+}
+
 interface Tasinmaz {
   id: number
   tapu_sahibi: string
@@ -257,12 +270,12 @@ export default function Tasinmazlar(): React.JSX.Element {
 
   // Filter and Search logic
   const filteredTasinmazlar = tasinmazlar.filter((t) => {
-    const term = search.toLowerCase()
+    const term = turkishToLower(search)
     const matchesSearch =
-      t.tapu_sahibi.toLowerCase().includes(term) ||
-      (t.ada || '').toLowerCase().includes(term) ||
-      (t.parsel || '').toLowerCase().includes(term) ||
-      (t.kanal_adi || '').toLowerCase().includes(term)
+      turkishToLower(t.tapu_sahibi).includes(term) ||
+      turkishToLower(t.ada || '').includes(term) ||
+      turkishToLower(t.parsel || '').includes(term) ||
+      turkishToLower(t.kanal_adi || '').includes(term)
 
     const matchesMahalle = filterMahalle === 'Hepsi' || t.mahalle_koy === filterMahalle
     const matchesKanal = filterKanal === 'Hepsi' || t.kanal_adi === filterKanal
@@ -331,7 +344,7 @@ export default function Tasinmazlar(): React.JSX.Element {
               <Search className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Ada, Parsel, Tapu Sahibi ara..."
+                placeholder="Fiş No, Seri No, Tapu Sahibi ara..."
                 className="w-full pl-9 pr-3 py-2.5 rounded-xl glass-input text-xs"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -402,7 +415,7 @@ export default function Tasinmazlar(): React.JSX.Element {
             <div className="grid grid-cols-12 gap-2 border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider py-3 px-3">
               <div className="col-span-3">Tapu Sahibi</div>
               <div className="col-span-2">Köy / Mahalle</div>
-              <div className="col-span-2 text-center">Ada / Parsel</div>
+              <div className="col-span-2 text-center">Fiş No / Seri No</div>
               <div className="col-span-2 text-right">Alan (m²)</div>
               <div className="col-span-2">Kanal Adı</div>
               <div className="col-span-1 text-right">İşlemler</div>
@@ -551,27 +564,27 @@ export default function Tasinmazlar(): React.JSX.Element {
               />
             </div>
 
-            {/* Grid Ada / Parsel */}
+            {/* Grid Fiş No / Seri No */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                  Ada
+                <label className="text-xs font-semibold text-slate-330 uppercase tracking-wider">
+                  Fiş No
                 </label>
                 <input
                   type="text"
-                  placeholder="Örn: 104"
+                  placeholder="Örn: 450"
                   className="w-full px-3 py-2.5 rounded-xl glass-input text-sm"
                   value={ada}
                   onChange={(e) => setAda(e.target.value)}
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                  Parsel
+                <label className="text-xs font-semibold text-slate-330 uppercase tracking-wider">
+                  Seri No
                 </label>
                 <input
                   type="text"
-                  placeholder="Örn: 12"
+                  placeholder="Örn: 4"
                   className="w-full px-3 py-2.5 rounded-xl glass-input text-sm"
                   value={parsel}
                   onChange={(e) => setParsel(e.target.value)}
@@ -684,8 +697,8 @@ export default function Tasinmazlar(): React.JSX.Element {
           {/* Excel Header */}
           <div className="grid grid-cols-12 gap-1 border-b border-slate-800 bg-slate-950/80 px-2 py-2 text-xs font-bold text-slate-300">
             <div className="col-span-3">Tapu Sahibi</div>
-            <div className="col-span-1">Ada</div>
-            <div className="col-span-1">Parsel</div>
+            <div className="col-span-1">Fiş No</div>
+            <div className="col-span-1">Seri No</div>
             <div className="col-span-1 text-right">Alan (m²)</div>
             <div className="col-span-2">Mahalle/Köy</div>
             <div className="col-span-2">Kanal Adı</div>

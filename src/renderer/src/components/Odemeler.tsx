@@ -2,6 +2,19 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Search, Printer, Coins, X, AlertCircle, FileText, CheckCircle2, User } from 'lucide-react'
 
+const turkishToLower = (str: string): string => {
+  if (!str) return ''
+  return str
+    .replace(/İ/g, 'i')
+    .replace(/I/g, 'ı')
+    .replace(/Ş/g, 'ş')
+    .replace(/Ç/g, 'ç')
+    .replace(/Ğ/g, 'ğ')
+    .replace(/Ü/g, 'ü')
+    .replace(/Ö/g, 'ö')
+    .toLowerCase()
+}
+
 interface OwnerSummary {
   tapu_sahibi: string
   unpaid_count: number
@@ -137,7 +150,7 @@ export default function Odemeler(): React.JSX.Element {
 
   // Filter owners list
   const filteredOwners = owners.filter((o) =>
-    o.tapu_sahibi.toLowerCase().includes(search.toLowerCase())
+    turkishToLower(o.tapu_sahibi).includes(turkishToLower(search))
   )
 
   const rowVirtualizer = useVirtualizer({
@@ -418,9 +431,9 @@ export default function Odemeler(): React.JSX.Element {
                           </td>
                           <td className="py-2.5 px-3">
                             <span className="block font-medium text-slate-200">
-                              Ada {s.ada || '-'} Parsel {s.parsel || '-'}
+                              Fiş No: {s.ada || '-'} Seri: {s.parsel || '-'}
                             </span>
-                            <span className="block text-[10px] text-slate-550">
+                            <span className="block text-[10px] text-slate-555">
                               {s.mahalle_koy} | {s.kanal_adi || 'Kanal Belirtilmemiş'}
                             </span>
                           </td>
@@ -526,7 +539,7 @@ export default function Odemeler(): React.JSX.Element {
                           {new Date(s.sulama_tarihi).toLocaleDateString('tr-TR')}
                         </td>
                         <td className="p-1.5">
-                          Ada {s.ada || '-'} Parsel {s.parsel || '-'} ({s.mahalle_koy})
+                          Fiş No: {s.ada || '-'} Seri: {s.parsel || '-'} ({s.mahalle_koy})
                         </td>
                         <td className="p-1.5 text-right">{s.sulama_suresi_saat} sa</td>
                         <td className="p-1.5 text-right font-semibold">
@@ -626,7 +639,7 @@ export default function Odemeler(): React.JSX.Element {
                         {new Date(s.sulama_tarihi).toLocaleDateString('tr-TR')}
                       </td>
                       <td className="p-2 border border-slate-400">
-                        Ada {s.ada || '-'} Parsel {s.parsel || '-'} ({s.mahalle_koy})
+                        Fiş No: {s.ada || '-'} Seri: {s.parsel || '-'} ({s.mahalle_koy})
                       </td>
                       <td className="p-2 border border-slate-400 text-right">
                         {s.sulama_suresi_saat} sa

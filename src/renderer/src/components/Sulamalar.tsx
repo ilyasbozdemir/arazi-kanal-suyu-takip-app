@@ -16,6 +16,19 @@ import {
   User
 } from 'lucide-react'
 
+const turkishToLower = (str: string): string => {
+  if (!str) return ''
+  return str
+    .replace(/İ/g, 'i')
+    .replace(/I/g, 'ı')
+    .replace(/Ş/g, 'ş')
+    .replace(/Ç/g, 'ç')
+    .replace(/Ğ/g, 'ğ')
+    .replace(/Ü/g, 'ü')
+    .replace(/Ö/g, 'ö')
+    .toLowerCase()
+}
+
 interface Sulama {
   id: number
   tasinmaz_id: number
@@ -24,7 +37,7 @@ interface Sulama {
   sulama_suresi_saat: number
   ucret: number
   odeme_durumu: string
-  aciklama: string
+  aciklama?: string
   // Joined fields
   tapu_sahibi: string
   ada: string
@@ -32,8 +45,8 @@ interface Sulama {
   alan_m2: number
   mahalle_koy: string
   kanal_adi: string
-  ad_soyad: string
-  gorev: string
+  ad_soyad?: string
+  gorev?: string
 }
 
 interface Tasinmaz {
@@ -58,6 +71,121 @@ interface SulamalarProps {
   onViewModeChange: (mode: 'standard' | 'excel') => void
 }
 
+const renderReceiptContent = (s: Sulama, logo: string | null, name: string): React.JSX.Element => {
+  return (
+    <div className="space-y-4 font-sans text-xs text-black leading-relaxed bg-white p-2">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b-2 border-black pb-3">
+        {logo ? (
+          <img src={logo} className="w-16 h-16 object-contain" alt="Logo" />
+        ) : (
+          <div className="w-16 h-16 border border-dashed border-slate-400 rounded-lg flex items-center justify-center text-[10px] text-slate-400 font-bold">LOGO</div>
+        )}
+        <div className="text-right flex-1 pl-4">
+          <h1 className="text-xs font-extrabold tracking-wide uppercase text-black leading-tight">
+            {name}
+          </h1>
+          <p className="text-[9px] text-slate-650 font-sans mt-0.5">Tarım Sulama Kooperatifi / Birliği</p>
+          <p className="text-[9px] text-slate-500 font-sans font-medium">
+            Fiş Tarihi: {new Date(s.sulama_tarihi).toLocaleDateString('tr-TR')}
+          </p>
+        </div>
+      </div>
+
+      {/* Title */}
+      <div className="text-center bg-slate-100 py-1.5 border border-slate-350 rounded">
+        <span className="text-[10px] font-extrabold uppercase tracking-widest text-black">
+          SULAMA HİZMET / TESLİM FİŞİ
+        </span>
+      </div>
+
+      {/* Details Table */}
+      <table className="w-full text-left border-collapse border border-black text-[10px] font-sans">
+        <tbody>
+          <tr className="border-b border-black">
+            <td className="p-2 bg-slate-50 font-bold border-r border-black w-1/3">FİŞ NO:</td>
+            <td className="p-2 font-mono font-bold text-black">#000{s.id}</td>
+          </tr>
+          <tr className="border-b border-black">
+            <td className="p-2 bg-slate-50 font-bold border-r border-black">TAPU SAHİBİ / MALİK:</td>
+            <td className="p-2 font-bold text-black uppercase">{s.tapu_sahibi}</td>
+          </tr>
+          <tr className="border-b border-black">
+            <td className="p-2 bg-slate-50 font-bold border-r border-black">FİŞ NO - SERİ NO:</td>
+            <td className="p-2 font-mono font-bold text-black">
+              {s.ada || '-'} - {s.parsel || '-'}
+            </td>
+          </tr>
+          <tr className="border-b border-black">
+            <td className="p-2 bg-slate-50 font-bold border-r border-black">KÖY / MAHALLE:</td>
+            <td className="p-2 text-black">{s.mahalle_koy || '-'}</td>
+          </tr>
+          <tr className="border-b border-black">
+            <td className="p-2 bg-slate-50 font-bold border-r border-black">SU KANALI:</td>
+            <td className="p-2 text-black">{s.kanal_adi || '-'}</td>
+          </tr>
+          <tr className="border-b border-black">
+            <td className="p-2 bg-slate-50 font-bold border-r border-black">SULAMA GÖREVLİSİ (MERAV):</td>
+            <td className="p-2 text-black">{s.ad_soyad}</td>
+          </tr>
+          <tr className="border-b border-black">
+            <td className="p-2 bg-slate-50 font-bold border-r border-black">SULAMA SÜRESİ:</td>
+            <td className="p-2 text-black font-bold">{s.sulama_suresi_saat} Saat</td>
+          </tr>
+          <tr className="border-b border-black">
+            <td className="p-2 bg-slate-50 font-bold border-r border-black">SAATLİK TARİFE:</td>
+            <td className="p-2 text-black">
+              ₺ {((s.ucret || 0) / (s.sulama_suresi_saat || 1)).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} / Saat
+            </td>
+          </tr>
+          <tr className="border-b border-black bg-slate-50">
+            <td className="p-2 font-bold border-r border-black text-xs">TOPLAM TUTAR:</td>
+            <td className="p-2 text-xs font-extrabold text-black">
+              ₺ {s.ucret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+            </td>
+          </tr>
+          <tr>
+            <td className="p-2 bg-slate-50 font-bold border-r border-black">ÖDEME DURUMU:</td>
+            <td className={`p-2 font-extrabold uppercase ${s.odeme_durumu === 'Ödendi' ? 'text-emerald-700' : 'text-amber-700'}`}>
+              {s.odeme_durumu}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      {/* Description */}
+      {s.aciklama && (
+        <div className="border border-slate-350 p-2 rounded bg-slate-50 text-[9px]">
+          <strong className="block text-slate-800">Açıklama / Not:</strong>
+          <p className="text-slate-700 mt-0.5">{s.aciklama}</p>
+        </div>
+      )}
+
+      {/* Signatures */}
+      <div className="grid grid-cols-2 gap-4 pt-6 text-center text-[10px]">
+        <div>
+          <span className="block font-bold text-slate-800">Teslim Eden (Merav)</span>
+          <span className="block text-[8px] text-slate-500 mt-0.5">{s.ad_soyad}</span>
+          <span className="block h-10"></span>
+          <span className="block border-t border-slate-400 w-24 mx-auto pt-1 text-slate-500 text-[8px]">İmza</span>
+        </div>
+        <div>
+          <span className="block font-bold text-slate-800">Teslim Alan (Malik)</span>
+          <span className="block text-[8px] text-slate-500 mt-0.5">{s.tapu_sahibi}</span>
+          <span className="block h-10"></span>
+          <span className="block border-t border-slate-400 w-24 mx-auto pt-1 text-slate-500 text-[8px]">İmza</span>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="text-center text-[8px] text-slate-450 pt-4 border-t border-dashed border-slate-300 mt-4 font-mono">
+        <p>Bu fiş otomasyon sistemi üzerinden üretilmiştir. Bilgi amaçlıdır.</p>
+        <p className="mt-0.5">Baskı Tarihi: {new Date().toLocaleString('tr-TR')}</p>
+      </div>
+    </div>
+  )
+}
+
 export default function Sulamalar({
   viewMode,
   onViewModeChange
@@ -73,9 +201,14 @@ export default function Sulamalar({
   const [editingId, setEditingId] = useState<number | null>(null)
   const [showPrintModal, setShowPrintModal] = useState<Sulama | null>(null)
 
+  // Institution settings for printing
+  const [kurumAdi, setKurumAdi] = useState('Arazi Kanal Suyu Takip Programı')
+  const [kurumLogo, setKurumLogo] = useState<string | null>(null)
+
   // Form State (Standard Mode)
   const [fisNoGiris, setFisNoGiris] = useState('')
   const [malikGiris, setMalikGiris] = useState('')
+  const [hizliAramaText, setHizliAramaText] = useState('')
 
   const [gorevliId, setGorevliId] = useState('')
   const [sulamaTarihi, setSulamaTarihi] = useState(new Date().toISOString().split('T')[0])
@@ -156,6 +289,26 @@ export default function Sulamalar({
       if (officers.length > 0 && !newRow.gorevli_id) {
         setNewRow((prev) => ({ ...prev, gorevli_id: officers[0].id.toString() }))
       }
+
+      // Load institution name for printing header
+      const dbKurumAdi = await window.api.dbQuery(
+        "SELECT deger FROM ayarlar WHERE anahtar = 'kurum_adi'"
+      )
+      if (dbKurumAdi && dbKurumAdi[0]?.deger) {
+        setKurumAdi(dbKurumAdi[0].deger)
+      } else {
+        setKurumAdi('Arazi Kanal Suyu Takip Programı')
+      }
+
+      // Load institution logo for printing
+      const dbKurumLogo = await window.api.dbQuery(
+        "SELECT deger FROM ayarlar WHERE anahtar = 'kurum_logo'"
+      )
+      if (dbKurumLogo && dbKurumLogo[0]?.deger) {
+        setKurumLogo(dbKurumLogo[0].deger)
+      } else {
+        setKurumLogo(null)
+      }
     } catch (e) {
       console.error('Error loading data:', e)
     }
@@ -164,6 +317,13 @@ export default function Sulamalar({
   useEffect(() => {
     loadData()
   }, [])
+
+  // Auto-select first supervisor when gorevliler load if none is selected
+  useEffect(() => {
+    if (gorevliler.length > 0 && !gorevliId) {
+      setGorevliId(gorevliler[0].id.toString())
+    }
+  }, [gorevliler, gorevliId])
 
   // Auto calculate fee when hours or rate changes (Standard Form)
   useEffect(() => {
@@ -464,8 +624,7 @@ export default function Sulamalar({
     setEditingId(null)
     setFisNoGiris('')
     setMalikGiris('')
-    setGorevliId(gorevliler.length > 0 ? gorevliler[0].id.toString() : '')
-    setSulamaTarihi(new Date().toISOString().split('T')[0])
+    // We intentionally PRESERVE gorevliId and sulamaTarihi to allow rapid consecutive entries of slips for the same supervisor and date.
     setSulamaSuresiSaat('')
     setUcret('')
     setOdemeDurumu('Ödenmedi')
@@ -484,12 +643,12 @@ export default function Sulamalar({
 
   // Search and Filter Slips
   const filteredSulamalar = sulamalar.filter((s) => {
-    const term = search.toLowerCase()
+    const term = turkishToLower(search)
     const matchesSearch =
-      s.tapu_sahibi.toLowerCase().includes(term) ||
-      (s.ad_soyad || '').toLowerCase().includes(term) ||
-      (s.kanal_adi || '').toLowerCase().includes(term) ||
-      (s.mahalle_koy || '').toLowerCase().includes(term)
+      turkishToLower(s.tapu_sahibi).includes(term) ||
+      turkishToLower(s.ad_soyad || '').includes(term) ||
+      turkishToLower(s.kanal_adi || '').includes(term) ||
+      turkishToLower(s.mahalle_koy || '').includes(term)
 
     const matchesOdeme = filterOdeme === 'Hepsi' || s.odeme_durumu === filterOdeme
 
@@ -518,7 +677,7 @@ export default function Sulamalar({
   const matchedSlips = malikGiris.trim()
     ? sulamalar.filter(
         (s) =>
-          s.tapu_sahibi.trim().toLowerCase() === malikGiris.trim().toLowerCase()
+          turkishToLower(s.tapu_sahibi.trim()) === turkishToLower(malikGiris.trim())
       )
     : []
   const unpaidSlips = matchedSlips.filter((s) => s.odeme_durumu === 'Ödenmedi')
@@ -807,24 +966,100 @@ export default function Sulamalar({
                 </div>
               )}
 
-              {/* Ada-Parsel Giriş */}
+              {/* Hızlı Malik / Fiş Arama */}
+              <div className="space-y-1 pb-3 border-b border-slate-800/60">
+                <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider block">
+                  Kayıtlı Malik Arama (Hızlı Doldur)
+                </label>
+                <input
+                  type="text"
+                  list="form-tasinmazlar-list"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900/60 border border-indigo-500/20 text-xs text-indigo-300 placeholder-indigo-500/60"
+                  placeholder="Kişi adı veya Fiş No yazın..."
+                  value={hizliAramaText}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    setHizliAramaText(val)
+                    const match = val.match(/\[ID:(\d+)\]$/)
+                    if (match) {
+                      const selectedId = parseInt(match[1])
+                      const found = tasinmazlar.find((t) => t.id === selectedId)
+                      if (found) {
+                        setMalikGiris(found.tapu_sahibi)
+                        if (found.ada || found.parsel) {
+                          setFisNoGiris(`${found.ada || ''}-${found.parsel || ''}`)
+                        } else {
+                          setFisNoGiris('')
+                        }
+                        setHizliAramaText('')
+                      }
+                    }
+                  }}
+                />
+                <datalist id="form-tasinmazlar-list">
+                  {tasinmazlar.map((t) => (
+                    <option
+                      key={t.id}
+                      value={`${t.tapu_sahibi} - ${t.mahalle_koy || 'Mülk'} (Fiş No: ${t.ada || '-'}, Seri: ${t.parsel || '-'}) [ID:${t.id}]`}
+                    />
+                  ))}
+                </datalist>
+              </div>
+
+              {/* Top/Batch Settings: Supervisor & Date */}
+              <div className="grid grid-cols-2 gap-3 pb-3 border-b border-slate-800/60 bg-indigo-950/15 p-3.5 rounded-xl">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-indigo-300 uppercase tracking-wider block">
+                    Sulama Sorumlusu (Merav) *
+                  </label>
+                  <select
+                    className="w-full px-2 py-1.5 rounded-lg bg-slate-900 border border-indigo-500/30 text-xs font-bold text-slate-200 outline-none focus:border-indigo-400 transition"
+                    value={gorevliId}
+                    onChange={(e) => setGorevliId(e.target.value)}
+                    required
+                  >
+                    <option className="bg-slate-950 text-slate-400 text-xs" value="">
+                      -- Görevli Seçin --
+                    </option>
+                    {gorevliler.map((g) => (
+                      <option key={g.id} className="bg-slate-950 text-slate-200 text-xs" value={g.id}>
+                        {g.ad_soyad}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-indigo-300 uppercase tracking-wider block">
+                    Tarih *
+                  </label>
+                  <input
+                    type="date"
+                    className="w-full px-2 py-1.5 rounded-lg bg-slate-900 border border-indigo-500/30 text-xs font-bold text-slate-200 outline-none focus:border-indigo-400 transition"
+                    value={sulamaTarihi}
+                    onChange={(e) => setSulamaTarihi(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Fiş No - Seri No Giriş */}
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider flex items-center gap-1.5">
                   <Grid className="w-3.5 h-3.5 text-indigo-400" />
-                  Ada-Parsel *
+                  Fiş No - Seri No *
                 </label>
                 <div className="relative">
                   <input
                     type="text"
                     className="w-full px-3 py-2.5 rounded-xl glass-input text-xs font-mono font-bold tracking-wider"
-                    placeholder="Örn: 250-5"
+                    placeholder="Örn: 450-4"
                     value={fisNoGiris}
                     onChange={(e) => handleFisNoChange(e.target.value)}
                     required
                   />
                 </div>
                 <div className="text-[10px] text-slate-500 mt-1">
-                  Ada ve parsel numarasını aralarında tire '-' olacak şekilde yazın.
+                  Fiş numarasını ve serisini aralarında tire '-' olacak şekilde yazın.
                 </div>
               </div>
 
@@ -890,81 +1125,63 @@ export default function Sulamalar({
                 </div>
               )}
 
-
-              {/* Select Gorevli */}
+              {/* Süre (Saat) */}
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider">
-                  Sulama Sorumlusu (Görevli) *
+                <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-indigo-400" />
+                  Süre (Saat) *
                 </label>
-                <select
-                  className="w-full px-3 py-2.5 rounded-xl glass-input text-xs"
-                  value={gorevliId}
-                  onChange={(e) => setGorevliId(e.target.value)}
+                <input
+                  type="number"
+                  step="any"
+                  placeholder="Örn: 2.5"
+                  className="w-full px-3 py-2.5 rounded-xl glass-input text-xs font-bold"
+                  value={sulamaSuresiSaat}
+                  onChange={(e) => setSulamaSuresiSaat(e.target.value)}
                   required
-                >
-                  <option className="bg-slate-950 text-slate-400" value="">
-                    -- Görevli Seçin --
-                  </option>
-                  {gorevliler.map((g) => (
-                    <option key={g.id} className="bg-slate-950 text-slate-200" value={g.id}>
-                      {g.ad_soyad} ({g.gorev || 'Görevli'})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Grid Tarih / Süre */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider">
-                    Tarih
-                  </label>
-                  <input
-                    type="date"
-                    className="w-full px-3 py-2 rounded-xl glass-input text-xs"
-                    value={sulamaTarihi}
-                    onChange={(e) => setSulamaTarihi(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider">
-                    Süre (Saat) *
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    placeholder="Örn: 2.5"
-                    className="w-full px-3 py-2 rounded-xl glass-input text-xs"
-                    value={sulamaSuresiSaat}
-                    onChange={(e) => setSulamaSuresiSaat(e.target.value)}
-                    required
-                  />
-                </div>
+                />
               </div>
 
               {/* Calculations Area */}
-              <div className="bg-indigo-950/20 border border-indigo-500/10 p-3 rounded-xl space-y-2">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider">
-                    Toplam Ücret Tutar (₺) *
-                  </label>
-                  <div className="relative">
-                    <Coins className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-                    <input
-                      type="number"
-                      step="any"
-                      placeholder="0.00"
-                      disabled={isCalculated}
-                      className={`w-full pl-8 pr-3 py-2 rounded-xl text-sm font-bold ${
-                        isCalculated
-                          ? 'bg-slate-900/80 border border-white/5 text-indigo-300'
-                          : 'glass-input'
-                      }`}
-                      value={ucret}
-                      onChange={(e) => setUcret(e.target.value)}
-                      required
-                    />
+              <div className="bg-indigo-950/20 border border-indigo-500/10 p-3 rounded-xl space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider block">
+                      Saatlik Ücret (₺)
+                    </label>
+                    <select
+                      className="w-full px-3 py-2 rounded-xl glass-input text-xs font-semibold text-slate-200 cursor-pointer"
+                      value={saatUcreti}
+                      onChange={(e) => setSaatUcreti(e.target.value)}
+                    >
+                      {suUcretleriList.map((rate) => (
+                        <option key={rate} className="bg-slate-950 text-slate-200" value={rate}>
+                          ₺{rate}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider block">
+                      Toplam Ücret (₺) *
+                    </label>
+                    <div className="relative">
+                      <Coins className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder="0.00"
+                        disabled={isCalculated}
+                        className={`w-full pl-8 pr-2 py-2 rounded-xl text-xs font-bold ${
+                          isCalculated
+                            ? 'bg-slate-900/80 border border-white/5 text-indigo-300'
+                            : 'glass-input'
+                        }`}
+                        value={ucret}
+                        onChange={(e) => setUcret(e.target.value)}
+                        required
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1339,100 +1556,53 @@ export default function Sulamalar({
         </div>
       )}
 
-      {/* Printable Receipt Overlay (Thermal receipt mockup) */}
+      {/* Printable Receipt Overlay (A5 Page mockup preview) */}
       {showPrintModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white text-slate-900 w-full max-w-sm rounded-2xl shadow-2xl p-6 flex flex-col justify-between border border-slate-200 no-print">
-            {/* Ticket Content (This will be printed) */}
-            <div id="receipt-print" className="font-mono text-xs text-slate-800 space-y-4">
-              <div className="text-center space-y-1 pb-4 border-b border-dashed border-slate-300">
-                <h4 className="text-base font-bold uppercase tracking-wide text-slate-900">
-                  ARAZİ SULAMA FİŞİ
-                </h4>
-                <p className="text-[10px] text-slate-500">Kanal Suyu Takip Programı</p>
-                <p className="text-[10px]">
-                  {new Date(showPrintModal.sulama_tarihi).toLocaleDateString('tr-TR')} -{' '}
-                  {new Date().toLocaleTimeString('tr-TR')}
-                </p>
-              </div>
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white text-slate-900 w-full max-w-xl rounded-2xl shadow-2xl p-6 flex flex-col justify-between border border-slate-200 no-print my-8 animate-fadeIn">
+            {/* Custom local print media configurations */}
+            <style>{`
+              @media print {
+                @page {
+                  size: A5 portrait;
+                  margin: 8mm;
+                }
+                body {
+                  background: white !important;
+                  color: black !important;
+                }
+                .no-print {
+                  display: none !important;
+                }
+                .print-only {
+                  display: block !important;
+                  width: 100% !important;
+                  max-width: 132mm !important;
+                  margin: 0 auto !important;
+                  padding: 0 !important;
+                  color: black !important;
+                  background: white !important;
+                }
+              }
+            `}</style>
 
-              <div className="space-y-1.5 py-2">
-                <div className="flex justify-between">
-                  <span className="font-semibold">FİŞ NO:</span>
-                  <span>#000{showPrintModal.id}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-semibold">TAPU SAHİBİ:</span>
-                  <span className="text-right font-bold text-slate-950">
-                    {showPrintModal.tapu_sahibi}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-semibold">ADA/PARSEL:</span>
-                  <span>
-                    {showPrintModal.ada || '-'} / {showPrintModal.parsel || '-'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-semibold">KÖY/MAHALLE:</span>
-                  <span>{showPrintModal.mahalle_koy || '-'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-semibold">KULLANILAN KANAL:</span>
-                  <span>{showPrintModal.kanal_adi || '-'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-semibold">SULAMA GÖREVLİSİ:</span>
-                  <span>{showPrintModal.ad_soyad}</span>
-                </div>
-              </div>
-
-              <div className="border-t border-b border-dashed border-slate-300 py-2.5 my-2 space-y-1">
-                <div className="flex justify-between">
-                  <span>SULAMA SÜRESİ:</span>
-                  <span className="font-bold">{showPrintModal.sulama_suresi_saat} Saat</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="font-bold">TOPLAM TUTAR:</span>
-                  <span className="font-extrabold text-slate-950">
-                    ₺ {showPrintModal.ucret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span>ÖDEME DURUMU:</span>
-                  <span
-                    className={`font-bold uppercase ${showPrintModal.odeme_durumu === 'Ödendi' ? 'text-emerald-600' : 'text-amber-600'}`}
-                  >
-                    {showPrintModal.odeme_durumu}
-                  </span>
-                </div>
-              </div>
-
-              {showPrintModal.aciklama && (
-                <div className="text-[10px] text-slate-500 py-1 bg-slate-50 rounded px-2">
-                  <span className="font-bold block text-slate-700">Not:</span>
-                  {showPrintModal.aciklama}
-                </div>
-              )}
-
-              <div className="text-center text-[10px] text-slate-400 pt-4 border-t border-slate-200">
-                <p>İyi çalışmalar dileriz.</p>
-                <p className="mt-0.5">Program veritabanından üretilmiştir.</p>
-              </div>
+            {/* Ticket Content Screen Preview */}
+            <div className="border border-slate-200 p-6 rounded-xl bg-slate-50/50">
+              {renderReceiptContent(showPrintModal, kurumLogo, kurumAdi)}
             </div>
 
             {/* Modal Actions */}
-            <div className="flex space-x-2 mt-6 border-t border-slate-100 pt-4">
+            <div className="flex space-x-2.5 mt-5 border-t border-slate-100 pt-4 bg-white">
               <button
                 onClick={handlePrint}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-xl flex items-center justify-center gap-1.5 transition text-xs"
+                className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 px-4 rounded-xl flex items-center justify-center gap-1.5 transition text-xs cursor-pointer shadow-lg shadow-indigo-600/10"
               >
                 <Printer className="h-4 w-4" />
-                <span>Yazdır</span>
+                <span>Yazdır (A5 / Yarım A4)</span>
               </button>
               <button
                 onClick={() => setShowPrintModal(null)}
-                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-4 rounded-xl transition text-xs"
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 px-5 rounded-xl transition text-xs cursor-pointer"
               >
                 Kapat
               </button>
@@ -1441,69 +1611,10 @@ export default function Sulamalar({
         </div>
       )}
 
-      {/* Pure CSS/HTML container specifically designed for paper layout printing */}
+      {/* Pure CSS/HTML container specifically designed for paper layout printing (A5 Portrait) */}
       {showPrintModal && (
-        <div className="print-only hidden font-mono text-[10px] leading-relaxed text-black bg-white p-4 w-[80mm] space-y-4">
-          <div className="text-center space-y-1 pb-2 border-b border-dashed border-black">
-            <h4 className="text-sm font-bold uppercase text-black">ARAZİ SULAMA FİŞİ</h4>
-            <p className="text-[8px] text-black/70">Kanal Suyu Takip Programı</p>
-            <p className="text-[8px]">
-              {new Date(showPrintModal.sulama_tarihi).toLocaleDateString('tr-TR')} -{' '}
-              {new Date().toLocaleTimeString('tr-TR')}
-            </p>
-          </div>
-          <div className="space-y-1 py-1">
-            <div className="flex justify-between">
-              <span>FİŞ NO:</span>
-              <span>#000{showPrintModal.id}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>TAPU SAHİBİ:</span>
-              <span className="font-bold">{showPrintModal.tapu_sahibi}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>ADA/PARSEL:</span>
-              <span>
-                {showPrintModal.ada || '-'} / {showPrintModal.parsel || '-'}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>KÖY/MAHALLE:</span>
-              <span>{showPrintModal.mahalle_koy || '-'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>SU KANALI:</span>
-              <span>{showPrintModal.kanal_adi || '-'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>GÖREVLİ:</span>
-              <span>{showPrintModal.ad_soyad}</span>
-            </div>
-          </div>
-          <div className="border-t border-b border-dashed border-black py-2 space-y-1">
-            <div className="flex justify-between">
-              <span>SULAMA SÜRESİ:</span>
-              <span className="font-bold">{showPrintModal.sulama_suresi_saat} Saat</span>
-            </div>
-            <div className="flex justify-between">
-              <span>TOPLAM TUTAR:</span>
-              <span className="font-bold">
-                ₺ {showPrintModal.ucret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>DURUM:</span>
-              <span className="font-bold uppercase">{showPrintModal.odeme_durumu}</span>
-            </div>
-          </div>
-          {showPrintModal.aciklama && (
-            <div className="text-[8px] border border-black/10 p-1">
-              <strong>Not:</strong> {showPrintModal.aciklama}
-            </div>
-          )}
-          <div className="text-center text-[8px] pt-2">
-            <p>Bilgi amaçlıdır. Teşekkürler.</p>
-          </div>
+        <div className="print-only hidden w-full bg-white text-black">
+          {renderReceiptContent(showPrintModal, kurumLogo, kurumAdi)}
         </div>
       )}
     </div>

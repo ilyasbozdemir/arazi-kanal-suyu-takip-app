@@ -31,13 +31,13 @@ import Sulamalar from './components/Sulamalar'
 import Ayarlar from './components/Ayarlar'
 import Odemeler from './components/Odemeler'
 import { Footer } from './components/Footer'
-
-type TabType = 'dashboard' | 'sulamalar' | 'tasinmazlar' | 'gorevliler' | 'ayarlar' | 'odemeler'
+import { useTabStore } from './store/tabStore'
+import TabsBar from './components/TabsBar'
 
 export default function App(): React.JSX.Element {
   const [filePath, setFilePath] = useState<string | null>(null)
   const [isDirty, setIsDirty] = useState(false)
-  const [activeTab, setActiveTab] = useState<TabType>('dashboard')
+  const { activeTab, addTab, clearTabs } = useTabStore()
   const [sulamaViewMode, setSulamaViewMode] = useState<'standard' | 'excel'>('standard')
 
   // Institution Settings State
@@ -230,6 +230,22 @@ export default function App(): React.JSX.Element {
     }
   }, [])
 
+  // Listen for Ctrl+S / Cmd+S keyboard shortcut to save database file
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault()
+        if (filePath && isDirty) {
+          handleSave()
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [filePath, isDirty])
+
   const handleSave = async (): Promise<void> => {
     try {
       const res = await window.api.saveFile()
@@ -244,7 +260,7 @@ export default function App(): React.JSX.Element {
   const handleClose = async (): Promise<void> => {
     try {
       await window.api.closeFile()
-      setActiveTab('dashboard')
+      clearTabs()
     } catch (e: any) {
       console.error('Error closing file:', e)
     }
@@ -425,7 +441,7 @@ export default function App(): React.JSX.Element {
                 <div className="absolute left-0 mt-1.5 w-56 bg-slate-900 dark:bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-1 z-50">
                   <button
                     onMouseDown={() => {
-                      setActiveTab('dashboard')
+                      addTab('dashboard')
                       setActiveMenu(null)
                     }}
                     className={`flex items-center space-x-2 w-full px-3 py-2 text-left rounded-lg transition ${activeTab === 'dashboard' ? 'bg-indigo-600 text-white' : 'hover:bg-indigo-600 hover:text-white text-slate-200'}`}
@@ -435,7 +451,7 @@ export default function App(): React.JSX.Element {
                   </button>
                   <button
                     onMouseDown={() => {
-                      setActiveTab('sulamalar')
+                      addTab('sulamalar')
                       setActiveMenu(null)
                     }}
                     className={`flex items-center space-x-2 w-full px-3 py-2 text-left rounded-lg transition ${activeTab === 'sulamalar' ? 'bg-indigo-600 text-white' : 'hover:bg-indigo-600 hover:text-white text-slate-200'}`}
@@ -445,7 +461,7 @@ export default function App(): React.JSX.Element {
                   </button>
                   <button
                     onMouseDown={() => {
-                      setActiveTab('odemeler')
+                      addTab('odemeler')
                       setActiveMenu(null)
                     }}
                     className={`flex items-center space-x-2 w-full px-3 py-2 text-left rounded-lg transition ${activeTab === 'odemeler' ? 'bg-indigo-600 text-white' : 'hover:bg-indigo-600 hover:text-white text-slate-200'}`}
@@ -455,7 +471,7 @@ export default function App(): React.JSX.Element {
                   </button>
                   <button
                     onMouseDown={() => {
-                      setActiveTab('tasinmazlar')
+                      addTab('tasinmazlar')
                       setActiveMenu(null)
                     }}
                     className={`flex items-center space-x-2 w-full px-3 py-2 text-left rounded-lg transition ${activeTab === 'tasinmazlar' ? 'bg-indigo-600 text-white' : 'hover:bg-indigo-600 hover:text-white text-slate-200'}`}
@@ -465,7 +481,7 @@ export default function App(): React.JSX.Element {
                   </button>
                   <button
                     onMouseDown={() => {
-                      setActiveTab('gorevliler')
+                      addTab('gorevliler')
                       setActiveMenu(null)
                     }}
                     className={`flex items-center space-x-2 w-full px-3 py-2 text-left rounded-lg transition ${activeTab === 'gorevliler' ? 'bg-indigo-600 text-white' : 'hover:bg-indigo-600 hover:text-white text-slate-200'}`}
@@ -476,7 +492,7 @@ export default function App(): React.JSX.Element {
                   <div className="h-px bg-white/5 my-1"></div>
                   <button
                     onMouseDown={() => {
-                      setActiveTab('ayarlar')
+                      addTab('ayarlar')
                       setActiveMenu(null)
                     }}
                     className={`flex items-center space-x-2 w-full px-3 py-2 text-left rounded-lg transition ${activeTab === 'ayarlar' ? 'bg-indigo-600 text-white' : 'hover:bg-indigo-600 hover:text-white text-slate-200'}`}
@@ -509,7 +525,7 @@ export default function App(): React.JSX.Element {
                   </div>
                   <button
                     onMouseDown={() => {
-                      setActiveTab('sulamalar')
+                      addTab('sulamalar')
                       setSulamaViewMode('standard')
                       setActiveMenu(null)
                     }}
@@ -520,7 +536,7 @@ export default function App(): React.JSX.Element {
                   </button>
                   <button
                     onMouseDown={() => {
-                      setActiveTab('sulamalar')
+                      addTab('sulamalar')
                       setSulamaViewMode('excel')
                       setActiveMenu(null)
                     }}
@@ -701,6 +717,7 @@ export default function App(): React.JSX.Element {
         </div>
       ) : (
         <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+          <TabsBar />
           {/* Sub-Header / Breadcrumb */}
           <div className="h-10 bg-slate-900/10 border-b border-white/5 flex items-center justify-between px-6 shrink-0 no-print">
             <div className="flex items-center space-x-2 text-[10px] font-semibold text-slate-400">
