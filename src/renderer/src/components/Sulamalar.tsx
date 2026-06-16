@@ -88,6 +88,7 @@ export default function Sulamalar({
   const [aciklama, setAciklama] = useState('')
 
   // New Row State (Excel Mode)
+  const [newRowTasinmazSearch, setNewRowTasinmazSearch] = useState('')
   const [newRow, setNewRow] = useState({
     tasinmaz_id: '',
     gorevli_id: '',
@@ -338,6 +339,8 @@ export default function Sulamalar({
       )
 
       // Reset bottom row state
+      // Reset bottom row state
+      setNewRowTasinmazSearch('')
       setNewRow({
         tasinmaz_id: '',
         gorevli_id: gorevliler.length > 0 ? gorevliler[0].id.toString() : '',
@@ -347,6 +350,23 @@ export default function Sulamalar({
         odeme_durumu: 'Ödenmedi',
         aciklama: ''
       })
+
+      await loadData()
+    } catch (e: any) {
+      console.error('Error quick inserting excel row:', e)
+      alert('Kaydedilirken hata oluştu.')
+    }
+  }
+
+  const handleNewRowTasinmazChange = (val: string) => {
+    setNewRowTasinmazSearch(val)
+    const match = val.match(/\[ID:(\d+)\]$/)
+    if (match) {
+      setNewRow((prev) => ({ ...prev, tasinmaz_id: match[1] }))
+    } else {
+      setNewRow((prev) => ({ ...prev, tasinmaz_id: '' }))
+    }
+  }
 
       await loadData()
     } catch (e: any) {
@@ -1145,21 +1165,21 @@ export default function Sulamalar({
                   </td>
                   {/* Taşınmaz */}
                   <td className="p-1.5" style={{ width: '25%' }}>
-                    <select
-                      className="bg-slate-900 border border-indigo-500/25 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-indigo-300 font-bold"
-                      value={newRow.tasinmaz_id}
-                      onChange={(e) =>
-                        setNewRow((prev) => ({ ...prev, tasinmaz_id: e.target.value }))
-                      }
-                    >
-                      <option value="">-- Taşınmaz Seçin --</option>
+                    <input
+                      list="tasinmazlar-list"
+                      placeholder="Mülk/Kişi Ara..."
+                      className={`bg-slate-900 border ${newRow.tasinmaz_id ? 'border-emerald-500/50' : 'border-indigo-500/25'} focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-indigo-300 font-bold`}
+                      value={newRowTasinmazSearch}
+                      onChange={(e) => handleNewRowTasinmazChange(e.target.value)}
+                    />
+                    <datalist id="tasinmazlar-list">
                       {tasinmazlar.map((t) => (
-                        <option key={t.id} className="bg-slate-950 text-slate-200" value={t.id}>
-                          {t.tapu_sahibi} - {t.mahalle_koy} (Ada {t.ada || '-'} Parsel{' '}
-                          {t.parsel || '-'})
-                        </option>
+                        <option
+                          key={t.id}
+                          value={`${t.tapu_sahibi} - ${t.mahalle_koy || 'Mülk'} (Ada: ${t.ada || '-'}, Parsel: ${t.parsel || '-'}) [ID:${t.id}]`}
+                        />
                       ))}
-                    </select>
+                    </datalist>
                   </td>
                   {/* Görevli */}
                   <td className="p-1.5" style={{ width: '18%' }}>

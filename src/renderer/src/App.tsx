@@ -56,6 +56,7 @@ export default function App(): React.JSX.Element {
     null
   )
   const [showAboutModal, setShowAboutModal] = useState(false)
+  const [showSetupModal, setShowSetupModal] = useState(false)
   const [appVersion, setAppVersion] = useState('1.0.0')
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -138,11 +139,13 @@ export default function App(): React.JSX.Element {
       let dbName = ''
       let dbLogo: string | null = null
       let dbTheme = localStorage.getItem('tema') || 'dark'
+      let dbFisYontemi = ''
 
       dbSettings.forEach((setting: any) => {
         if (setting.anahtar === 'kurum_adi') dbName = setting.deger
         if (setting.anahtar === 'kurum_logo') dbLogo = setting.deger
         if (setting.anahtar === 'tema') dbTheme = setting.deger
+        if (setting.anahtar === 'fis_giris_yontemi') dbFisYontemi = setting.deger
       })
 
       if (dbName) setKurumAdi(dbName)
@@ -161,6 +164,12 @@ export default function App(): React.JSX.Element {
           if (window.api?.setTheme) window.api.setTheme('dark')
         }
         localStorage.setItem('tema', dbTheme)
+      }
+
+      if (!dbFisYontemi) {
+        setShowSetupModal(true)
+      } else {
+        setShowSetupModal(false)
       }
     } catch (e) {
       console.error('Error loading settings from DB:', e)
@@ -345,14 +354,14 @@ export default function App(): React.JSX.Element {
               {activeMenu === 'dosya' && (
                 <div className="absolute left-0 mt-1.5 w-56 bg-slate-900 dark:bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-1 z-50">
                   <button
-                    onClick={handleCreateNew}
+                    onMouseDown={handleCreateNew}
                     className="flex items-center space-x-2 w-full px-3 py-2 text-left hover:bg-indigo-650 hover:text-white rounded-lg transition"
                   >
                     <FilePlus className="h-3.5 w-3.5" />
                     <span>Yeni Dosya Oluştur</span>
                   </button>
                   <button
-                    onClick={() => handleOpenFile()}
+                    onMouseDown={() => handleOpenFile()}
                     className="flex items-center space-x-2 w-full px-3 py-2 text-left hover:bg-indigo-650 hover:text-white rounded-lg transition"
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
@@ -363,7 +372,7 @@ export default function App(): React.JSX.Element {
                     <>
                       <div className="h-px bg-white/5 my-1"></div>
                       <button
-                        onClick={() => {
+                        onMouseDown={() => {
                           handleSave()
                           setActiveMenu(null)
                         }}
@@ -374,7 +383,7 @@ export default function App(): React.JSX.Element {
                         <span>Değişiklikleri Kaydet</span>
                       </button>
                       <button
-                        onClick={() => {
+                        onMouseDown={() => {
                           handleClose()
                           setActiveMenu(null)
                         }}
@@ -388,7 +397,7 @@ export default function App(): React.JSX.Element {
 
                   <div className="h-px bg-white/5 my-1"></div>
                   <button
-                    onClick={handleExitApp}
+                    onMouseDown={handleExitApp}
                     className="flex items-center space-x-2 w-full px-3 py-2 text-left hover:bg-rose-600 hover:text-white text-rose-400 rounded-lg transition"
                   >
                     <LogOut className="h-3.5 w-3.5" />
@@ -415,7 +424,7 @@ export default function App(): React.JSX.Element {
               {activeMenu === 'moduller' && filePath && (
                 <div className="absolute left-0 mt-1.5 w-56 bg-slate-900 dark:bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-1 z-50">
                   <button
-                    onClick={() => {
+                    onMouseDown={() => {
                       setActiveTab('dashboard')
                       setActiveMenu(null)
                     }}
@@ -425,7 +434,7 @@ export default function App(): React.JSX.Element {
                     <span>Genel Bakış (Dashboard)</span>
                   </button>
                   <button
-                    onClick={() => {
+                    onMouseDown={() => {
                       setActiveTab('sulamalar')
                       setActiveMenu(null)
                     }}
@@ -435,7 +444,7 @@ export default function App(): React.JSX.Element {
                     <span>Fiş Girişleri (Sulamalar)</span>
                   </button>
                   <button
-                    onClick={() => {
+                    onMouseDown={() => {
                       setActiveTab('odemeler')
                       setActiveMenu(null)
                     }}
@@ -445,7 +454,7 @@ export default function App(): React.JSX.Element {
                     <span>Ödeme Takibi & Bildirimler</span>
                   </button>
                   <button
-                    onClick={() => {
+                    onMouseDown={() => {
                       setActiveTab('tasinmazlar')
                       setActiveMenu(null)
                     }}
@@ -455,7 +464,7 @@ export default function App(): React.JSX.Element {
                     <span>Taşınmaz Tanımları</span>
                   </button>
                   <button
-                    onClick={() => {
+                    onMouseDown={() => {
                       setActiveTab('gorevliler')
                       setActiveMenu(null)
                     }}
@@ -466,7 +475,7 @@ export default function App(): React.JSX.Element {
                   </button>
                   <div className="h-px bg-white/5 my-1"></div>
                   <button
-                    onClick={() => {
+                    onMouseDown={() => {
                       setActiveTab('ayarlar')
                       setActiveMenu(null)
                     }}
@@ -499,7 +508,7 @@ export default function App(): React.JSX.Element {
                     Fiş Giriş Görünümü
                   </div>
                   <button
-                    onClick={() => {
+                    onMouseDown={() => {
                       setActiveTab('sulamalar')
                       setSulamaViewMode('standard')
                       setActiveMenu(null)
@@ -510,7 +519,7 @@ export default function App(): React.JSX.Element {
                     <span>Klasik Form Girişi</span>
                   </button>
                   <button
-                    onClick={() => {
+                    onMouseDown={() => {
                       setActiveTab('sulamalar')
                       setSulamaViewMode('excel')
                       setActiveMenu(null)
@@ -524,7 +533,7 @@ export default function App(): React.JSX.Element {
                   <div className="h-px bg-white/5 my-1"></div>
 
                   <button
-                    onClick={handleSendBackup}
+                    onMouseDown={handleSendBackup}
                     className="flex items-center space-x-2 w-full px-3 py-2 text-left hover:bg-indigo-600 hover:text-white rounded-lg transition text-slate-200"
                   >
                     <Mail className="h-3.5 w-3.5 text-indigo-400" />
@@ -546,7 +555,7 @@ export default function App(): React.JSX.Element {
               {activeMenu === 'yardim' && (
                 <div className="absolute left-0 mt-1.5 w-56 bg-slate-900 dark:bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-1 z-50">
                   <button
-                    onClick={() => {
+                    onMouseDown={() => {
                       handleCheckUpdates()
                       setActiveMenu(null)
                     }}
@@ -557,7 +566,7 @@ export default function App(): React.JSX.Element {
                     <span>{checkingUpdate ? 'Denetleniyor...' : 'Güncelleme Denetle'}</span>
                   </button>
                   <button
-                    onClick={() => {
+                    onMouseDown={() => {
                       setShowAboutModal(true)
                       setActiveMenu(null)
                     }}
@@ -772,6 +781,69 @@ export default function App(): React.JSX.Element {
                   <span className="flex items-center gap-2">🐛 Hata Bildir / Destek</span>
                   <span className="text-[10px] text-slate-500">Destek</span>
                 </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Setup Wizard Modal */}
+      {showSetupModal && (
+        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-indigo-500/30 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden p-8 relative animate-in fade-in zoom-in duration-300">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="p-4 bg-gradient-to-br from-indigo-500 to-cyan-500 rounded-full text-white shadow-xl shadow-indigo-500/20 mb-2">
+                <Settings className="w-8 h-8" />
+              </div>
+
+              <div>
+                <h2 className="text-2xl font-extrabold text-white">
+                  İlk Kurulum: Fiş Giriş Yöntemi
+                </h2>
+                <p className="text-sm text-slate-400 mt-2 leading-relaxed">
+                  Sulamalar ekranında kayıt yaparken mülk/kişi seçiminin nasıl yapılacağını
+                  belirleyin. Bu ayar sistemin size daha hızlı bir giriş sağlaması içindir.
+                </p>
+              </div>
+
+              <div className="w-full flex flex-col gap-4 mt-6">
+                <button
+                  onClick={async () => {
+                    await window.api.dbRun(
+                      "INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('fis_giris_yontemi', 'tasinmaz')"
+                    )
+                    setShowSetupModal(false)
+                  }}
+                  className="flex flex-col items-start p-4 bg-slate-800/80 hover:bg-indigo-600/20 border-2 border-transparent hover:border-indigo-500 rounded-2xl text-left transition group cursor-pointer"
+                >
+                  <span className="font-bold text-slate-200 group-hover:text-white flex items-center gap-2 text-lg">
+                    <Layers className="h-5 w-5 text-indigo-400" />1 - Taşınmaza Göre Seçim (Açılır
+                    Liste)
+                  </span>
+                  <span className="text-xs text-slate-450 mt-2">
+                    Eğer sistem üzerinden fiş çıkartıyor ve kayıtlara göre işlem yapıyorsanız bunu
+                    seçin. (Tapu sahibini seçerek listeleme yapar)
+                  </span>
+                </button>
+
+                <button
+                  onClick={async () => {
+                    await window.api.dbRun(
+                      "INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('fis_giris_yontemi', 'fis_no')"
+                    )
+                    setShowSetupModal(false)
+                  }}
+                  className="flex flex-col items-start p-4 bg-slate-800/80 hover:bg-emerald-600/20 border-2 border-transparent hover:border-emerald-500 rounded-2xl text-left transition group cursor-pointer"
+                >
+                  <span className="font-bold text-slate-200 group-hover:text-white flex items-center gap-2 text-lg">
+                    <Receipt className="h-5 w-5 text-emerald-400" />2 - Su Bekçisinden Gelen Fişe
+                    Göre
+                  </span>
+                  <span className="text-xs text-slate-450 mt-2">
+                    Eğer matbu fişleri (örn: Ada-Parsel 202-5) sisteme hızlıca aktarmak istiyorsanız
+                    bunu seçin. Gelen fiş numarasına göre giriş yapılır.
+                  </span>
+                </button>
               </div>
             </div>
           </div>

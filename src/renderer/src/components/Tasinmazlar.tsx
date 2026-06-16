@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { Search, Edit2, Trash2, Save, X, Layers, AlertCircle } from 'lucide-react'
+import { Search, Edit2, Trash2, Save, X, Layers, AlertCircle, Plus, Grid, FormInput } from 'lucide-react'
 
 interface Tasinmaz {
   id: number
@@ -37,6 +37,20 @@ export default function Tasinmazlar(): React.JSX.Element {
   const [mahalleList, setMahalleList] = useState<string[]>([])
   const [kanalList, setKanalList] = useState<string[]>([])
   const [definedChannels, setDefinedChannels] = useState<string[]>(['Ana Kanal'])
+
+  // View Mode
+  const [viewMode, setViewMode] = useState<'standard' | 'excel'>('standard')
+
+  // New Row State (Excel Mode)
+  const [newRow, setNewRow] = useState({
+    tapu_sahibi: '',
+    ada: '',
+    parsel: '',
+    alan_m2: '',
+    mahalle_koy: '',
+    kanal_adi: '',
+    aciklama: ''
+  })
 
   const loadTasinmazlar = async (): Promise<void> => {
     try {
@@ -134,6 +148,73 @@ export default function Tasinmazlar(): React.JSX.Element {
     }
   }
 
+  // Inline Row Update (Excel Mode)
+  const updateExcelRow = async (id: number, field: string, value: any): Promise<void> => {
+    try {
+      const row = tasinmazlar.find((t) => t.id === id)
+      if (!row) return
+
+      let { tapu_sahibi, ada, parsel, alan_m2, mahalle_koy, kanal_adi, aciklama } = row
+
+      if (field === 'tapu_sahibi') tapu_sahibi = value
+      else if (field === 'ada') ada = value
+      else if (field === 'parsel') parsel = value
+      else if (field === 'alan_m2') alan_m2 = parseFloat(value) || 0
+      else if (field === 'mahalle_koy') mahalle_koy = value
+      else if (field === 'kanal_adi') kanal_adi = value
+      else if (field === 'aciklama') aciklama = value
+
+      await window.api.dbRun(
+        'UPDATE tasinmazlar SET tapu_sahibi = ?, ada = ?, parsel = ?, alan_m2 = ?, mahalle_koy = ?, kanal_adi = ?, aciklama = ? WHERE id = ?',
+        [tapu_sahibi, ada, parsel, alan_m2, mahalle_koy, kanal_adi, aciklama, id]
+      )
+
+      await loadTasinmazlar()
+    } catch (e: any) {
+      console.error('Error updating excel row inline:', e)
+    }
+  }
+
+  // Quick Insert (Excel Mode bottom row)
+  const handleAddExcelRow = async (): Promise<void> => {
+    if (!newRow.tapu_sahibi.trim()) {
+      alert('Tapu Sahibi alanı boş bırakılamaz.')
+      return
+    }
+
+    const numericAlan = parseFloat(newRow.alan_m2) || 0
+
+    try {
+      await window.api.dbRun(
+        'INSERT INTO tasinmazlar (tapu_sahibi, ada, parsel, alan_m2, mahalle_koy, kanal_adi, aciklama) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [
+          newRow.tapu_sahibi.trim(),
+          newRow.ada.trim(),
+          newRow.parsel.trim(),
+          numericAlan,
+          newRow.mahalle_koy.trim(),
+          newRow.kanal_adi.trim(),
+          newRow.aciklama.trim()
+        ]
+      )
+
+      setNewRow({
+        tapu_sahibi: '',
+        ada: '',
+        parsel: '',
+        alan_m2: '',
+        mahalle_koy: '',
+        kanal_adi: definedChannels.length > 0 ? definedChannels[0] : '',
+        aciklama: ''
+      })
+
+      await loadTasinmazlar()
+    } catch (e: any) {
+      console.error('Error quick inserting excel row:', e)
+      alert('Kaydedilirken hata oluştu.')
+    }
+  }
+
   const handleEdit = (tasinmaz: Tasinmaz): void => {
     setEditingId(tasinmaz.id)
     setTapuSahibi(tasinmaz.tapu_sahibi)
@@ -204,15 +285,44 @@ export default function Tasinmazlar(): React.JSX.Element {
   return (
     <div className="space-y-6 h-full flex flex-col">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-white">Taşınmazlar</h1>
-        <p className="text-slate-400 mt-1">
-          Sistemde sulama hizmeti alan arazilerin ve tapuların listesi.
-        </p>
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-white">Taşınmazlar</h1>
+          <p className="text-slate-400 mt-1">
+            Sistemde sulama hizmeti alan arazilerin ve tapuların listesi.
+          </p>
+        </div>
+        
+        {/* View Switcher */}
+        <div className="flex items-center space-x-1 bg-slate-900/50 p-1 rounded-xl border border-white/5 shadow-inner">
+          <button
+            onClick={() => setViewMode('standard')}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+              viewMode === 'standard'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <FormInput className="w-3.5 h-3.5" />
+            <span>Klasik Form</span>
+          </button>
+          <button
+            onClick={() => setViewMode('excel')}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+              viewMode === 'excel'
+                ? 'bg-emerald-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <Grid className="w-3.5 h-3.5" />
+            <span>Excel Tablo</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Content Split Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
+      {viewMode === 'standard' ? (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
         {/* Left Side: List & Filters (2 Cols) */}
         <div className="lg:col-span-2 flex flex-col space-y-4 min-h-0">
           {/* Search & Filters */}
@@ -569,6 +679,225 @@ export default function Tasinmazlar(): React.JSX.Element {
           </form>
         </div>
       </div>
+      ) : (
+        <div className="flex-1 flex flex-col min-h-0 bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden shadow-2xl relative">
+          {/* Excel Header */}
+          <div className="grid grid-cols-12 gap-1 border-b border-slate-800 bg-slate-950/80 px-2 py-2 text-xs font-bold text-slate-300">
+            <div className="col-span-3">Tapu Sahibi</div>
+            <div className="col-span-1">Ada</div>
+            <div className="col-span-1">Parsel</div>
+            <div className="col-span-1 text-right">Alan (m²)</div>
+            <div className="col-span-2">Mahalle/Köy</div>
+            <div className="col-span-2">Kanal Adı</div>
+            <div className="col-span-2">Açıklama</div>
+          </div>
+
+          {/* Excel Body */}
+          <div
+            ref={parentRef}
+            className="flex-1 overflow-auto bg-slate-950"
+            style={{ minHeight: '300px' }}
+          >
+            <div
+              style={{
+                height: `${rowVirtualizer.getTotalSize()}px`,
+                width: '100%',
+                position: 'relative'
+              }}
+            >
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const row = paginatedTasinmazlar[virtualRow.index]
+                return (
+                  <div
+                    key={row.id}
+                    className="absolute top-0 left-0 w-full grid grid-cols-12 gap-1 border-b border-slate-800/40 hover:bg-slate-800/30 transition-colors px-2 py-1 items-center group"
+                    style={{
+                      transform: `translateY(${virtualRow.start}px)`,
+                      height: `${virtualRow.size}px`
+                    }}
+                  >
+                    {/* tapu_sahibi */}
+                    <div className="col-span-3">
+                      <input
+                        type="text"
+                        className="bg-transparent border border-transparent hover:border-slate-700 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-white"
+                        defaultValue={row.tapu_sahibi}
+                        onBlur={(e) => updateExcelRow(row.id, 'tapu_sahibi', e.target.value)}
+                      />
+                    </div>
+                    {/* ada */}
+                    <div className="col-span-1">
+                      <input
+                        type="text"
+                        className="bg-transparent border border-transparent hover:border-slate-700 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-white"
+                        defaultValue={row.ada || ''}
+                        onBlur={(e) => updateExcelRow(row.id, 'ada', e.target.value)}
+                      />
+                    </div>
+                    {/* parsel */}
+                    <div className="col-span-1">
+                      <input
+                        type="text"
+                        className="bg-transparent border border-transparent hover:border-slate-700 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-white"
+                        defaultValue={row.parsel || ''}
+                        onBlur={(e) => updateExcelRow(row.id, 'parsel', e.target.value)}
+                      />
+                    </div>
+                    {/* alan_m2 */}
+                    <div className="col-span-1">
+                      <input
+                        type="number"
+                        className="bg-transparent border border-transparent hover:border-slate-700 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-right text-indigo-300 font-medium"
+                        defaultValue={row.alan_m2 || ''}
+                        onBlur={(e) => updateExcelRow(row.id, 'alan_m2', e.target.value)}
+                      />
+                    </div>
+                    {/* mahalle_koy */}
+                    <div className="col-span-2">
+                      <input
+                        type="text"
+                        className="bg-transparent border border-transparent hover:border-slate-700 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-white"
+                        defaultValue={row.mahalle_koy || ''}
+                        onBlur={(e) => updateExcelRow(row.id, 'mahalle_koy', e.target.value)}
+                      />
+                    </div>
+                    {/* kanal_adi */}
+                    <div className="col-span-2">
+                      {definedChannels.length > 1 ? (
+                        <select
+                          className="bg-transparent border border-transparent hover:border-slate-700 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-white"
+                          defaultValue={row.kanal_adi || ''}
+                          onChange={(e) => updateExcelRow(row.id, 'kanal_adi', e.target.value)}
+                        >
+                          <option value="" className="bg-slate-900 text-slate-200">Seçiniz...</option>
+                          {definedChannels.map(c => (
+                            <option key={c} value={c} className="bg-slate-900 text-slate-200">{c}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          className="bg-transparent border border-transparent hover:border-slate-700 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-white"
+                          defaultValue={row.kanal_adi || ''}
+                          onBlur={(e) => updateExcelRow(row.id, 'kanal_adi', e.target.value)}
+                        />
+                      )}
+                    </div>
+                    {/* aciklama & Delete button */}
+                    <div className="col-span-2 flex items-center space-x-1 pr-1">
+                      <input
+                        type="text"
+                        className="bg-transparent border border-transparent hover:border-slate-700 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-slate-400 flex-1"
+                        defaultValue={row.aciklama || ''}
+                        onBlur={(e) => updateExcelRow(row.id, 'aciklama', e.target.value)}
+                      />
+                      <button
+                        onClick={() => handleDelete(row.id, row.tapu_sahibi)}
+                        className="p-1.5 text-rose-400 hover:bg-rose-500/20 rounded opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                        title="Sil"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* New Row Area */}
+          <div className="bg-slate-900 border-t border-slate-700/50 p-2 shadow-2xl z-10">
+            <div className="grid grid-cols-12 gap-2 items-center">
+              <div className="col-span-3">
+                <input
+                  type="text"
+                  placeholder="Yeni Tapu Sahibi..."
+                  className="bg-slate-950 border border-indigo-500/30 focus:border-indigo-500 rounded px-2 py-1.5 w-full text-xs text-white"
+                  value={newRow.tapu_sahibi}
+                  onChange={(e) => setNewRow({ ...newRow, tapu_sahibi: e.target.value })}
+                />
+              </div>
+              <div className="col-span-1">
+                <input
+                  type="text"
+                  placeholder="Ada"
+                  className="bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded px-2 py-1.5 w-full text-xs text-white"
+                  value={newRow.ada}
+                  onChange={(e) => setNewRow({ ...newRow, ada: e.target.value })}
+                />
+              </div>
+              <div className="col-span-1">
+                <input
+                  type="text"
+                  placeholder="Parsel"
+                  className="bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded px-2 py-1.5 w-full text-xs text-white"
+                  value={newRow.parsel}
+                  onChange={(e) => setNewRow({ ...newRow, parsel: e.target.value })}
+                />
+              </div>
+              <div className="col-span-1">
+                <input
+                  type="number"
+                  placeholder="Alan m²"
+                  className="bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded px-2 py-1.5 w-full text-xs text-right text-indigo-300"
+                  value={newRow.alan_m2}
+                  onChange={(e) => setNewRow({ ...newRow, alan_m2: e.target.value })}
+                />
+              </div>
+              <div className="col-span-2">
+                <input
+                  type="text"
+                  placeholder="Mahalle/Köy"
+                  className="bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded px-2 py-1.5 w-full text-xs text-white"
+                  value={newRow.mahalle_koy}
+                  onChange={(e) => setNewRow({ ...newRow, mahalle_koy: e.target.value })}
+                />
+              </div>
+              <div className="col-span-2">
+                {definedChannels.length > 1 ? (
+                  <select
+                    className="bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded px-2 py-1.5 w-full text-xs text-white"
+                    value={newRow.kanal_adi}
+                    onChange={(e) => setNewRow({ ...newRow, kanal_adi: e.target.value })}
+                  >
+                    <option value="" className="bg-slate-900 text-slate-200">Kanal Seç...</option>
+                    {definedChannels.map(c => (
+                      <option key={c} value={c} className="bg-slate-900 text-slate-200">{c}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    placeholder="Kanal Adı"
+                    className="bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded px-2 py-1.5 w-full text-xs text-white"
+                    value={newRow.kanal_adi}
+                    onChange={(e) => setNewRow({ ...newRow, kanal_adi: e.target.value })}
+                  />
+                )}
+              </div>
+              <div className="col-span-2 flex items-center space-x-2">
+                <input
+                  type="text"
+                  placeholder="Açıklama"
+                  className="bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded px-2 py-1.5 w-full text-xs text-white flex-1"
+                  value={newRow.aciklama}
+                  onChange={(e) => setNewRow({ ...newRow, aciklama: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAddExcelRow()
+                  }}
+                />
+                <button
+                  onClick={handleAddExcelRow}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white rounded px-3 py-1.5 flex items-center justify-center transition shrink-0 shadow-lg"
+                  title="Ekle (Enter)"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
