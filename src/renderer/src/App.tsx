@@ -364,7 +364,7 @@ export default function App(): React.JSX.Element {
   }
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-[var(--background)] relative" ref={menuRef}>
+    <div className="flex-1 flex flex-col min-h-0 bg-[var(--background)] relative">
       {/* 1. Desktop Menu Bar (Always visible at the top) */}
       <div
         className="h-9 bg-[var(--menubar-bg)] text-[var(--menubar-text)] border-b border-white/5 flex items-center justify-between pl-4 pr-[140px] text-xs select-none no-print z-50 w-full transition-colors duration-200"
@@ -388,6 +388,7 @@ export default function App(): React.JSX.Element {
 
           {/* Menus List */}
           <div
+            ref={menuRef}
             className="flex space-x-1"
             style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
           >
