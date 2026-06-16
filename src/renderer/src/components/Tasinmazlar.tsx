@@ -18,7 +18,8 @@ export default function Tasinmazlar(): React.JSX.Element {
   const [search, setSearch] = useState('')
   const [filterMahalle, setFilterMahalle] = useState('Hepsi')
   const [filterKanal, setFilterKanal] = useState('Hepsi')
-  
+  const [pageSizeLimit, setPageSizeLimit] = useState<number>(0) // 0 = Hepsi
+
   const [editingId, setEditingId] = useState<number | null>(null)
 
   // Form State
@@ -43,14 +44,18 @@ export default function Tasinmazlar(): React.JSX.Element {
       setTasinmazlar(data)
 
       // Get unique values for filters
-      const uniqueMahalle = Array.from(new Set(data.map((item) => item.mahalle_koy).filter(Boolean)))
+      const uniqueMahalle = Array.from(
+        new Set(data.map((item) => item.mahalle_koy).filter(Boolean))
+      )
       const uniqueKanal = Array.from(new Set(data.map((item) => item.kanal_adi).filter(Boolean)))
-      
+
       setMahalleList(uniqueMahalle)
       setKanalList(uniqueKanal)
 
       // Load defined channels from settings
-      const resKanallar = await window.api.dbQuery("SELECT deger FROM ayarlar WHERE anahtar = 'su_kanallari'")
+      const resKanallar = await window.api.dbQuery(
+        "SELECT deger FROM ayarlar WHERE anahtar = 'su_kanallari'"
+      )
       let channelsList: string[] = ['Ana Kanal']
       if (resKanallar && resKanallar[0]?.deger) {
         try {
@@ -60,7 +65,7 @@ export default function Tasinmazlar(): React.JSX.Element {
         }
       }
       setDefinedChannels(channelsList)
-      
+
       // Default selection if not editing
       if (!editingId && channelsList.length > 0) {
         setKanalAdi((prev) => prev || channelsList[0])
@@ -142,7 +147,9 @@ export default function Tasinmazlar(): React.JSX.Element {
   }
 
   const handleDelete = async (id: number, owner: string): Promise<void> => {
-    const confirm = window.confirm(`${owner} adına kayıtlı taşınmazı silmek istediğinize emin misiniz?\nBu taşınmaza ait tüm sulama fişleri/geçmişi de KALICI OLARAK silinecektir!`)
+    const confirm = window.confirm(
+      `${owner} adına kayıtlı taşınmazı silmek istediğinize emin misiniz?\nBu taşınmaza ait tüm sulama fişleri/geçmişi de KALICI OLARAK silinecektir!`
+    )
     if (!confirm) return
 
     try {
@@ -182,12 +189,16 @@ export default function Tasinmazlar(): React.JSX.Element {
     return matchesSearch && matchesMahalle && matchesKanal
   })
 
+  // Apply page size limit
+  const paginatedTasinmazlar =
+    pageSizeLimit > 0 ? filteredTasinmazlar.slice(0, pageSizeLimit) : filteredTasinmazlar
+
   const parentRef = useRef<HTMLDivElement>(null)
   const rowVirtualizer = useVirtualizer({
-    count: filteredTasinmazlar.length,
+    count: paginatedTasinmazlar.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 52,
-    overscan: 10,
+    estimateSize: () => 56,
+    overscan: 10
   })
 
   return (
@@ -195,15 +206,15 @@ export default function Tasinmazlar(): React.JSX.Element {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-white">Taşınmazlar</h1>
-        <p className="text-slate-400 mt-1">Sistemde sulama hizmeti alan arazilerin ve tapuların listesi.</p>
+        <p className="text-slate-400 mt-1">
+          Sistemde sulama hizmeti alan arazilerin ve tapuların listesi.
+        </p>
       </div>
 
       {/* Main Content Split Area */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
-        
         {/* Left Side: List & Filters (2 Cols) */}
         <div className="lg:col-span-2 flex flex-col space-y-4 min-h-0">
-          
           {/* Search & Filters */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="relative md:col-span-1">
@@ -216,7 +227,7 @@ export default function Tasinmazlar(): React.JSX.Element {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            
+
             <div className="flex items-center space-x-2 bg-slate-900/40 border border-white/5 rounded-xl px-2.5">
               <span className="text-xs text-slate-400 whitespace-nowrap">Köy/Mahalle:</span>
               <select
@@ -224,9 +235,13 @@ export default function Tasinmazlar(): React.JSX.Element {
                 value={filterMahalle}
                 onChange={(e) => setFilterMahalle(e.target.value)}
               >
-                <option className="bg-slate-950 text-slate-200" value="Hepsi">Hepsi</option>
+                <option className="bg-slate-950 text-slate-200" value="Hepsi">
+                  Hepsi
+                </option>
                 {mahalleList.map((m, i) => (
-                  <option key={i} className="bg-slate-950 text-slate-200" value={m}>{m}</option>
+                  <option key={i} className="bg-slate-950 text-slate-200" value={m}>
+                    {m}
+                  </option>
                 ))}
               </select>
             </div>
@@ -238,104 +253,146 @@ export default function Tasinmazlar(): React.JSX.Element {
                 value={filterKanal}
                 onChange={(e) => setFilterKanal(e.target.value)}
               >
-                <option className="bg-slate-950 text-slate-200" value="Hepsi">Hepsi</option>
+                <option className="bg-slate-950 text-slate-200" value="Hepsi">
+                  Hepsi
+                </option>
                 {kanalList.map((k, i) => (
-                  <option key={i} className="bg-slate-950 text-slate-200" value={k}>{k}</option>
+                  <option key={i} className="bg-slate-950 text-slate-200" value={k}>
+                    {k}
+                  </option>
                 ))}
               </select>
             </div>
           </div>
 
           {/* List Card Container */}
-          <div className="glass-card rounded-2xl flex-1 p-4">
-            <div ref={parentRef} style={{ height: '500px', overflow: 'auto' }}>
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                    <th className="py-3 px-3">Tapu Sahibi</th>
-                    <th className="py-3 px-3">Köy / Mahalle</th>
-                    <th className="py-3 px-3 text-center">Ada / Parsel</th>
-                    <th className="py-3 px-3 text-right">Alan (m²)</th>
-                    <th className="py-3 px-3">Kanal Adı</th>
-                    <th className="py-3 px-3 text-right">İşlemler</th>
-                  </tr>
-                </thead>
-                <tbody style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative', display: 'block' }}>
-                  {filteredTasinmazlar.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="text-center py-8 text-slate-500 text-sm">
-                        Kriterlere uygun tapu kaydı bulunamadı.
-                      </td>
-                    </tr>
-                  ) : (
-                    rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                      const t = filteredTasinmazlar[virtualRow.index]
-                      return (
-                        <tr 
-                          key={t.id}
-                          ref={rowVirtualizer.measureElement}
-                          data-index={virtualRow.index}
-                          style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            width: '100%',
-                            transform: `translateY(${virtualRow.start}px)`,
-                            display: 'table',
-                            tableLayout: 'fixed',
-                          }}
-                          className={`border-b border-slate-800/50 hover:bg-slate-800/10 text-sm transition ${
-                            editingId === t.id ? 'bg-indigo-500/5 border-indigo-500/30' : ''
-                          }`}
+          <div className="glass-card rounded-2xl flex-1 flex flex-col p-4">
+            {/* Header and Page Limit Control */}
+            <div className="flex justify-between items-center mb-3 text-xs">
+              <span className="text-slate-400 font-medium">
+                {filteredTasinmazlar.length} kayıt bulundu
+              </span>
+              <div className="flex items-center space-x-2">
+                <span className="text-slate-400">Göster:</span>
+                <select
+                  className="bg-slate-900/40 border border-white/10 rounded-lg px-2 py-1 text-slate-200 outline-none cursor-pointer"
+                  value={pageSizeLimit}
+                  onChange={(e) => setPageSizeLimit(Number(e.target.value))}
+                >
+                  <option value={0}>Hepsi</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={250}>250</option>
+                  <option value={500}>500</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Grid Header */}
+            <div className="grid grid-cols-12 gap-2 border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider py-3 px-3">
+              <div className="col-span-3">Tapu Sahibi</div>
+              <div className="col-span-2">Köy / Mahalle</div>
+              <div className="col-span-2 text-center">Ada / Parsel</div>
+              <div className="col-span-2 text-right">Alan (m²)</div>
+              <div className="col-span-2">Kanal Adı</div>
+              <div className="col-span-1 text-right">İşlemler</div>
+            </div>
+
+            <div
+              ref={parentRef}
+              className="flex-1 overflow-y-auto overflow-x-hidden min-h-[300px]"
+              style={{ height: '500px' }}
+            >
+              <div
+                style={{
+                  height: `${rowVirtualizer.getTotalSize()}px`,
+                  width: '100%',
+                  position: 'relative'
+                }}
+              >
+                {paginatedTasinmazlar.length === 0 ? (
+                  <div className="absolute top-0 left-0 w-full text-center py-8 text-slate-500 text-sm">
+                    Kriterlere uygun tapu kaydı bulunamadı.
+                  </div>
+                ) : (
+                  rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                    const t = paginatedTasinmazlar[virtualRow.index]
+                    return (
+                      <div
+                        key={t.id}
+                        ref={rowVirtualizer.measureElement}
+                        data-index={virtualRow.index}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          transform: `translateY(${virtualRow.start}px)`
+                        }}
+                        className={`grid grid-cols-12 gap-2 items-center border-b border-slate-800/50 hover:bg-slate-800/10 text-sm transition py-3 px-3 ${
+                          editingId === t.id ? 'bg-indigo-500/5 border-indigo-500/30' : ''
+                        }`}
+                      >
+                        <div className="col-span-3 truncate pr-2">
+                          <span
+                            className="font-semibold text-white block truncate"
+                            title={t.tapu_sahibi}
+                          >
+                            {t.tapu_sahibi}
+                          </span>
+                          {t.aciklama && (
+                            <span
+                              className="text-xs text-slate-400 block truncate"
+                              title={t.aciklama}
+                            >
+                              {t.aciklama}
+                            </span>
+                          )}
+                        </div>
+                        <div
+                          className="col-span-2 text-slate-300 truncate pr-2"
+                          title={t.mahalle_koy}
                         >
-                          <td className="py-3.5 px-3 whitespace-nowrap">
-                            <span className="font-semibold text-white block">{t.tapu_sahibi}</span>
-                            {t.aciklama && (
-                              <span className="text-xs text-slate-400 block max-w-xs truncate">{t.aciklama}</span>
-                            )}
-                          </td>
-                          <td className="py-3.5 px-3 text-slate-300">
-                            {t.mahalle_koy || <span className="text-slate-500">-</span>}
-                          </td>
-                          <td className="py-3.5 px-3 text-center text-slate-300">
-                            {t.ada && t.parsel ? `${t.ada} / ${t.parsel}` : (t.ada || t.parsel || <span className="text-slate-500">-</span>)}
-                          </td>
-                          <td className="py-3.5 px-3 text-right text-indigo-300 font-medium">
-                            {t.alan_m2 ? `${t.alan_m2.toLocaleString('tr-TR')} m²` : '-'}
-                          </td>
-                          <td className="py-3.5 px-3">
-                            {t.kanal_adi ? (
-                              <span className="text-cyan-300 font-medium text-xs bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded-full inline-block">
-                                {t.kanal_adi}
-                              </span>
-                            ) : (
-                              <span className="text-slate-500">-</span>
-                            )}
-                          </td>
-                          <td className="py-3.5 px-3 text-right">
-                            <div className="flex justify-end space-x-2">
-                              <button
-                                onClick={() => handleEdit(t)}
-                                title="Düzenle"
-                                className="p-1.5 text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 rounded-lg transition"
-                              >
-                                <Edit2 className="h-4 w-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDelete(t.id, t.tapu_sahibi)}
-                                title="Sil"
-                                className="p-1.5 text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg transition"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </tbody>
-              </table>
+                          {t.mahalle_koy || <span className="text-slate-500">-</span>}
+                        </div>
+                        <div className="col-span-2 text-center text-slate-300 truncate">
+                          {t.ada && t.parsel
+                            ? `${t.ada} / ${t.parsel}`
+                            : t.ada || t.parsel || <span className="text-slate-500">-</span>}
+                        </div>
+                        <div className="col-span-2 text-right text-indigo-300 font-medium truncate pr-2">
+                          {t.alan_m2 ? `${t.alan_m2.toLocaleString('tr-TR')} m²` : '-'}
+                        </div>
+                        <div className="col-span-2 truncate">
+                          {t.kanal_adi ? (
+                            <span className="text-cyan-300 font-medium text-xs bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded-full inline-block truncate max-w-full">
+                              {t.kanal_adi}
+                            </span>
+                          ) : (
+                            <span className="text-slate-500">-</span>
+                          )}
+                        </div>
+                        <div className="col-span-1 flex justify-end space-x-2">
+                          <button
+                            onClick={() => handleEdit(t)}
+                            title="Düzenle"
+                            className="p-1.5 text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 rounded-lg transition"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(t.id, t.tapu_sahibi)}
+                            title="Sil"
+                            className="p-1.5 text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg transition"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -348,8 +405,8 @@ export default function Tasinmazlar(): React.JSX.Element {
               {editingId ? 'Taşınmazı Düzenle' : 'Yeni Taşınmaz Ekle'}
             </h3>
             {editingId && (
-              <button 
-                onClick={resetForm} 
+              <button
+                onClick={resetForm}
                 className="text-slate-400 hover:text-slate-200"
                 title="İptal Et"
               >
@@ -359,7 +416,6 @@ export default function Tasinmazlar(): React.JSX.Element {
           </div>
 
           <form onSubmit={handleSave} className="space-y-4">
-            
             {error && (
               <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-start space-x-2 text-rose-400 text-xs">
                 <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
@@ -369,7 +425,9 @@ export default function Tasinmazlar(): React.JSX.Element {
 
             {/* Input Tapu Sahibi */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Tapu Sahibi *</label>
+              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                Tapu Sahibi *
+              </label>
               <input
                 type="text"
                 placeholder="Örn: Mehmet Özkan"
@@ -383,7 +441,9 @@ export default function Tasinmazlar(): React.JSX.Element {
             {/* Grid Ada / Parsel */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Ada</label>
+                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Ada
+                </label>
                 <input
                   type="text"
                   placeholder="Örn: 104"
@@ -393,7 +453,9 @@ export default function Tasinmazlar(): React.JSX.Element {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Parsel</label>
+                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Parsel
+                </label>
                 <input
                   type="text"
                   placeholder="Örn: 12"
@@ -406,7 +468,9 @@ export default function Tasinmazlar(): React.JSX.Element {
 
             {/* Input Alan (m2) */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Alan (m²) *</label>
+              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                Alan (m²) *
+              </label>
               <input
                 type="number"
                 step="any"
@@ -420,7 +484,9 @@ export default function Tasinmazlar(): React.JSX.Element {
 
             {/* Input Mahalle / Koy */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Köy / Mahalle</label>
+              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                Köy / Mahalle
+              </label>
               <input
                 type="text"
                 placeholder="Örn: Akçaören Köyü"
@@ -432,10 +498,15 @@ export default function Tasinmazlar(): React.JSX.Element {
 
             {/* Su Kanalı / Kaynağı Selection */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider block">Kanal Adı / Su Kaynağı</label>
+              <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider block">
+                Kanal Adı / Su Kaynağı
+              </label>
               {definedChannels.length === 1 ? (
                 <div className="w-full px-3 py-2.5 bg-slate-900/40 border border-white/5 text-slate-350 text-xs rounded-xl font-medium select-none">
-                  {definedChannels[0]} <span className="text-[10px] text-slate-500 block mt-0.5">(Tek kanal tanımlı, ayarlardan değiştirebilirsiniz)</span>
+                  {definedChannels[0]}{' '}
+                  <span className="text-[10px] text-slate-500 block mt-0.5">
+                    (Tek kanal tanımlı, ayarlardan değiştirebilirsiniz)
+                  </span>
                 </div>
               ) : definedChannels.length > 1 ? (
                 <select
@@ -462,7 +533,9 @@ export default function Tasinmazlar(): React.JSX.Element {
 
             {/* Input Aciklama */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Açıklama / Not</label>
+              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                Açıklama / Not
+              </label>
               <textarea
                 placeholder="Taşınmazla ilgili ek notlar..."
                 className="w-full px-3 py-2.5 rounded-xl glass-input text-sm h-18 resize-none"
@@ -492,7 +565,6 @@ export default function Tasinmazlar(): React.JSX.Element {
             </div>
           </form>
         </div>
-
       </div>
     </div>
   )

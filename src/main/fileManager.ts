@@ -110,7 +110,9 @@ export async function promptSmtpBackup(win: BrowserWindow): Promise<boolean> {
 }
 
 // Get recent files list
-export async function getRecentFiles(): Promise<{ path: string; name: string; openedAt: string }[]> {
+export async function getRecentFiles(): Promise<
+  { path: string; name: string; openedAt: string }[]
+> {
   try {
     if (!fs.existsSync(RECENT_FILES_PATH)) {
       return []
@@ -188,7 +190,9 @@ export async function closeActiveFile(): Promise<void> {
 }
 
 // Create new file
-export async function createNewFile(win: BrowserWindow): Promise<{ success: boolean; filePath?: string; error?: string }> {
+export async function createNewFile(
+  win: BrowserWindow
+): Promise<{ success: boolean; filePath?: string; error?: string }> {
   const result = await dialog.showSaveDialog(win, {
     title: 'Yeni Takip Dosyası Oluştur',
     defaultPath: path.join(app.getPath('documents'), 'AraziTakip.asut'),
@@ -214,7 +218,7 @@ export async function createNewFile(win: BrowserWindow): Promise<{ success: bool
     // 4. Create initial ZIP package and add signature
     const zip = new AdmZip()
     zip.addLocalFile(tempDbPath!)
-    
+
     const zipBuffer = zip.toBuffer()
     const signature = Buffer.from('asut', 'utf8')
     fs.writeFileSync(targetPath, Buffer.concat([signature, zipBuffer]))
@@ -232,7 +236,10 @@ export async function createNewFile(win: BrowserWindow): Promise<{ success: bool
 }
 
 // Open existing file
-export async function openFile(win: BrowserWindow, pathToCheck?: string): Promise<{ success: boolean; filePath?: string; error?: string }> {
+export async function openFile(
+  win: BrowserWindow,
+  pathToCheck?: string
+): Promise<{ success: boolean; filePath?: string; error?: string }> {
   let targetPath = pathToCheck
 
   if (!targetPath) {
@@ -303,7 +310,7 @@ export async function saveFile(): Promise<{ success: boolean; error?: string }> 
   try {
     const zip = new AdmZip()
     zip.addLocalFile(tempDbPath)
-    
+
     const zipBuffer = zip.toBuffer()
     const signature = Buffer.from('asut', 'utf8')
     fs.writeFileSync(activeFilePath, Buffer.concat([signature, zipBuffer]))
@@ -317,7 +324,9 @@ export async function saveFile(): Promise<{ success: boolean; error?: string }> 
 }
 
 // Show unsaved changes dialog if dirty
-export async function promptUnsavedChanges(win: BrowserWindow): Promise<'save' | 'dontsave' | 'cancel'> {
+export async function promptUnsavedChanges(
+  win: BrowserWindow
+): Promise<'save' | 'dontsave' | 'cancel'> {
   if (!isDirty) return 'dontsave'
 
   const result = await dialog.showMessageBox(win, {

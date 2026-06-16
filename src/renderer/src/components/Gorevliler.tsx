@@ -15,7 +15,7 @@ export default function Gorevliler(): React.JSX.Element {
   const [gorevliler, setGorevliler] = useState<Gorevli[]>([])
   const [search, setSearch] = useState('')
   const [editingId, setEditingId] = useState<number | null>(null)
-  
+
   // Form State
   const [adSoyad, setAdSoyad] = useState('')
   const [gorev, setGorev] = useState('')
@@ -82,7 +82,9 @@ export default function Gorevliler(): React.JSX.Element {
   }
 
   const handleDelete = async (id: number, name: string): Promise<void> => {
-    const confirm = window.confirm(`${name} isimli görevliyi silmek istediğinize emin misiniz?\nVarsa bu görevliye ait sulama kayıtları silinemeyebilir (referans kısıtlaması nedeniyle).`)
+    const confirm = window.confirm(
+      `${name} isimli görevliyi silmek istediğinize emin misiniz?\nVarsa bu görevliye ait sulama kayıtları silinemeyebilir (referans kısıtlaması nedeniyle).`
+    )
     if (!confirm) return
 
     try {
@@ -91,7 +93,9 @@ export default function Gorevliler(): React.JSX.Element {
       if (editingId === id) resetForm()
     } catch (e: any) {
       console.error('Error deleting officer:', e)
-      alert('Hata: Bu görevliyi silemezsiniz çünkü üzerinde kayıtlı sulama fişleri var. Öncelikle sulama fişlerini güncellemeli veya silmelisiniz.')
+      alert(
+        'Hata: Bu görevliyi silemezsiniz çünkü üzerinde kayıtlı sulama fişleri var. Öncelikle sulama fişlerini güncellemeli veya silmelisiniz.'
+      )
     }
   }
 
@@ -119,7 +123,7 @@ export default function Gorevliler(): React.JSX.Element {
     count: filteredGorevliler.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 52,
-    overscan: 10,
+    overscan: 10
   })
 
   return (
@@ -127,15 +131,15 @@ export default function Gorevliler(): React.JSX.Element {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-white">Görevliler</h1>
-        <p className="text-slate-400 mt-1">Kanal suyu takibini yapan sucular, başkanlar ve saha sorumluları.</p>
+        <p className="text-slate-400 mt-1">
+          Kanal suyu takibini yapan sucular, başkanlar ve saha sorumluları.
+        </p>
       </div>
 
       {/* Main Content Split Area */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
-        
         {/* Left Side: List (2 Cols) */}
         <div className="lg:col-span-2 flex flex-col space-y-4 min-h-0">
-          
           {/* Search Bar */}
           <div className="relative">
             <Search className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-slate-400" />
@@ -161,7 +165,14 @@ export default function Gorevliler(): React.JSX.Element {
                     <th className="py-3 px-3 text-right">İşlemler</th>
                   </tr>
                 </thead>
-                <tbody style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative', display: 'block' }}>
+                <tbody
+                  style={{
+                    height: `${rowVirtualizer.getTotalSize()}px`,
+                    width: '100%',
+                    position: 'relative',
+                    display: 'block'
+                  }}
+                >
                   {filteredGorevliler.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="text-center py-8 text-slate-500 text-sm">
@@ -172,7 +183,7 @@ export default function Gorevliler(): React.JSX.Element {
                     rowVirtualizer.getVirtualItems().map((virtualRow) => {
                       const g = filteredGorevliler[virtualRow.index]
                       return (
-                        <tr 
+                        <tr
                           key={g.id}
                           ref={rowVirtualizer.measureElement}
                           data-index={virtualRow.index}
@@ -183,7 +194,7 @@ export default function Gorevliler(): React.JSX.Element {
                             width: '100%',
                             transform: `translateY(${virtualRow.start}px)`,
                             display: 'table',
-                            tableLayout: 'fixed',
+                            tableLayout: 'fixed'
                           }}
                           className={`border-b border-slate-800/50 hover:bg-slate-800/10 text-sm transition ${
                             editingId === g.id ? 'bg-indigo-500/5 border-indigo-500/30' : ''
@@ -210,16 +221,16 @@ export default function Gorevliler(): React.JSX.Element {
                                 <span>{g.eposta}</span>
                               </div>
                             )}
-                            {!g.telefon && !g.eposta && (
-                              <span className="text-slate-500">-</span>
-                            )}
+                            {!g.telefon && !g.eposta && <span className="text-slate-500">-</span>}
                           </td>
                           <td className="py-3.5 px-3 text-center">
-                            <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${
-                              g.aktif === 1 
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                                : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                            }`}>
+                            <span
+                              className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                g.aktif === 1
+                                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                  : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                              }`}
+                            >
                               {g.aktif === 1 ? 'Aktif' : 'Pasif'}
                             </span>
                           </td>
@@ -259,8 +270,8 @@ export default function Gorevliler(): React.JSX.Element {
               {editingId ? 'Görevliyi Düzenle' : 'Yeni Görevli Ekle'}
             </h3>
             {editingId && (
-              <button 
-                onClick={resetForm} 
+              <button
+                onClick={resetForm}
                 className="text-slate-400 hover:text-slate-200"
                 title="İptal Et"
               >
@@ -270,7 +281,6 @@ export default function Gorevliler(): React.JSX.Element {
           </div>
 
           <form onSubmit={handleSave} className="space-y-4">
-            
             {error && (
               <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-start space-x-2 text-rose-400 text-xs">
                 <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
@@ -280,7 +290,9 @@ export default function Gorevliler(): React.JSX.Element {
 
             {/* Input Ad Soyad */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Ad Soyad *</label>
+              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                Ad Soyad *
+              </label>
               <input
                 type="text"
                 placeholder="Örn: Ahmet Yılmaz"
@@ -293,7 +305,9 @@ export default function Gorevliler(): React.JSX.Element {
 
             {/* Input Gorev */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Görev / Unvan</label>
+              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                Görev / Unvan
+              </label>
               <input
                 type="text"
                 placeholder="Örn: Sucu, Sorumlu, Yönetici"
@@ -305,7 +319,9 @@ export default function Gorevliler(): React.JSX.Element {
 
             {/* Input Telefon */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Telefon</label>
+              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                Telefon
+              </label>
               <input
                 type="text"
                 placeholder="Örn: 0555 555 55 55"
@@ -317,7 +333,9 @@ export default function Gorevliler(): React.JSX.Element {
 
             {/* Input E-posta */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">E-posta</label>
+              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                E-posta
+              </label>
               <input
                 type="email"
                 placeholder="Örn: ahmet@mail.com"
@@ -334,8 +352,8 @@ export default function Gorevliler(): React.JSX.Element {
                 <button
                   type="button"
                   className={`px-3 py-1 rounded-lg text-xs font-bold border transition ${
-                    aktif === 1 
-                      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' 
+                    aktif === 1
+                      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
                       : 'bg-slate-800 text-slate-400 border-transparent hover:bg-slate-700'
                   }`}
                   onClick={() => setAktif(1)}
@@ -345,8 +363,8 @@ export default function Gorevliler(): React.JSX.Element {
                 <button
                   type="button"
                   className={`px-3 py-1 rounded-lg text-xs font-bold border transition ${
-                    aktif === 0 
-                      ? 'bg-rose-500/15 text-rose-400 border-rose-500/30' 
+                    aktif === 0
+                      ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
                       : 'bg-slate-800 text-slate-400 border-transparent hover:bg-slate-700'
                   }`}
                   onClick={() => setAktif(0)}
@@ -377,7 +395,6 @@ export default function Gorevliler(): React.JSX.Element {
             </div>
           </form>
         </div>
-
       </div>
     </div>
   )

@@ -57,7 +57,7 @@ function createWindow(): void {
     titleBarStyle: 'hidden',
     titleBarOverlay: {
       color: '#00000000', // transparent
-      symbolColor: nativeTheme.shouldUseDarkColors ? '#ffffff' : '#000000', 
+      symbolColor: nativeTheme.shouldUseDarkColors ? '#ffffff' : '#000000',
       height: 36 // h-9 equivalent
     },
     title: 'Arazi Kanal Suyu Takip Programı',
@@ -99,7 +99,7 @@ function createWindow(): void {
   mainWindow.on('close', async (e) => {
     if (mainWindow) {
       e.preventDefault()
-      
+
       if (getIsDirty()) {
         const action = await promptUnsavedChanges(mainWindow)
         if (action === 'cancel') return
@@ -162,164 +162,168 @@ if (!gotTheLock) {
     // Set app user model id for windows
     electronApp.setAppUserModelId('com.kanal-suyu-takibi')
 
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  app.on('browser-window-created', (_, window) => {
-    optimizer.watchWindowShortcuts(window)
-  })
+    // Default open or close DevTools by F12 in development
+    // and ignore CommandOrControl + R in production.
+    app.on('browser-window-created', (_, window) => {
+      optimizer.watchWindowShortcuts(window)
+    })
 
-  // Register Database IPC Handlers
-  ipcMain.handle('db:query', async (_event, { sql, params }) => {
-    try {
-      return query(sql, params)
-    } catch (e: any) {
-      console.error('SQL query error:', e)
-      throw e
-    }
-  })
-
-  ipcMain.handle('db:run', async (_event, { sql, params }) => {
-    try {
-      const result = run(sql, params)
-      setDirty(true)
-      sendFileStatus()
-      return result
-    } catch (e: any) {
-      console.error('SQL run error:', e)
-      throw e
-    }
-  })
-
-  // Register File IPC Handlers
-  ipcMain.handle('file:new', async () => {
-    if (!mainWindow) return { success: false, error: 'Ana pencere mevcut değil' }
-
-    if (getIsDirty()) {
-      const action = await promptUnsavedChanges(mainWindow)
-      if (action === 'cancel') return { success: false }
-    }
-
-    const result = await createNewFile(mainWindow)
-    sendFileStatus()
-    return result
-  })
-
-  ipcMain.handle('file:open', async (_event, pathToCheck?: string) => {
-    if (!mainWindow) return { success: false, error: 'Ana pencere mevcut değil' }
-
-    if (getIsDirty()) {
-      const action = await promptUnsavedChanges(mainWindow)
-      if (action === 'cancel') return { success: false }
-    }
-
-    const result = await openFile(mainWindow, pathToCheck)
-    sendFileStatus()
-    return result
-  })
-
-  ipcMain.handle('file:save', async () => {
-    const result = await saveFile()
-    sendFileStatus()
-    return result
-  })
-
-  ipcMain.handle('file:close', async () => {
-    if (!mainWindow) return { success: false }
-
-    if (getIsDirty()) {
-      const action = await promptUnsavedChanges(mainWindow)
-      if (action === 'cancel') return { success: false }
-    }
-
-    const proceed = await promptSmtpBackup(mainWindow)
-    if (!proceed) return { success: false }
-
-    await closeActiveFile()
-    sendFileStatus()
-    return { success: true }
-  })
-
-  ipcMain.handle('file:recent-get', async () => {
-    return getRecentFiles()
-  })
-
-  ipcMain.handle('file:recent-remove', async (_event, filePath) => {
-    await removeRecentFile(filePath)
-    return
-  })
-
-  ipcMain.handle('app:version', () => {
-    return app.getVersion()
-  })
-
-  ipcMain.handle('app:exit', () => {
-    mainWindow?.close()
-  })
-
-  ipcMain.handle('app:set-theme', (_event, theme: 'light' | 'dark') => {
-    if (mainWindow) {
-      if (theme === 'light') {
-        mainWindow.setTitleBarOverlay({ color: '#00000000', symbolColor: '#000000' })
-      } else {
-        mainWindow.setTitleBarOverlay({ color: '#00000000', symbolColor: '#ffffff' })
-      }
-    }
-  })
-
-  // Manual SMTP backup email trigger
-  ipcMain.handle('file:send-backup', async () => {
-    const filePath = getActiveFilePath()
-    if (!filePath) return { success: false, error: 'Açık dosya yok' }
-
-    // Save changes first
-    await saveFile()
-
-    const smtpConfig = await getSmtpConfig()
-    if (!smtpConfig) return { success: false, error: 'SMTP ayarları eksik veya yedekleme e-postası aktif değil.' }
-
-    return sendBackupEmail(filePath, smtpConfig)
-  })
-
-  // Auto-updater Handlers
-  ipcMain.handle('file:check-updates', async () => {
-    if (app.isPackaged) {
+    // Register Database IPC Handlers
+    ipcMain.handle('db:query', async (_event, { sql, params }) => {
       try {
-        return await autoUpdater.checkForUpdates()
-      } catch (e) {
-        console.error('Error checking updates:', e)
+        return query(sql, params)
+      } catch (e: any) {
+        console.error('SQL query error:', e)
         throw e
       }
-    }
-    return { versionInfo: { version: app.getVersion() } }
-  })
+    })
 
-  ipcMain.handle('file:restart-and-install', async () => {
-    autoUpdater.quitAndInstall()
-  })
+    ipcMain.handle('db:run', async (_event, { sql, params }) => {
+      try {
+        const result = run(sql, params)
+        setDirty(true)
+        sendFileStatus()
+        return result
+      } catch (e: any) {
+        console.error('SQL run error:', e)
+        throw e
+      }
+    })
 
-  // Auto-updater Listeners
-  autoUpdater.on('update-available', (info) => {
-    mainWindow?.webContents.send('update-available', info)
-  })
+    // Register File IPC Handlers
+    ipcMain.handle('file:new', async () => {
+      if (!mainWindow) return { success: false, error: 'Ana pencere mevcut değil' }
 
-  autoUpdater.on('update-not-available', () => {
-    mainWindow?.webContents.send('update-not-available')
-  })
+      if (getIsDirty()) {
+        const action = await promptUnsavedChanges(mainWindow)
+        if (action === 'cancel') return { success: false }
+      }
 
-  autoUpdater.on('update-downloaded', (info) => {
-    mainWindow?.webContents.send('update-downloaded', info)
-  })
+      const result = await createNewFile(mainWindow)
+      sendFileStatus()
+      return result
+    })
 
-  autoUpdater.on('error', (err) => {
-    console.error('AutoUpdater error:', err)
-  })
+    ipcMain.handle('file:open', async (_event, pathToCheck?: string) => {
+      if (!mainWindow) return { success: false, error: 'Ana pencere mevcut değil' }
 
-  createWindow()
+      if (getIsDirty()) {
+        const action = await promptUnsavedChanges(mainWindow)
+        if (action === 'cancel') return { success: false }
+      }
 
-  app.on('activate', function () {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+      const result = await openFile(mainWindow, pathToCheck)
+      sendFileStatus()
+      return result
+    })
+
+    ipcMain.handle('file:save', async () => {
+      const result = await saveFile()
+      sendFileStatus()
+      return result
+    })
+
+    ipcMain.handle('file:close', async () => {
+      if (!mainWindow) return { success: false }
+
+      if (getIsDirty()) {
+        const action = await promptUnsavedChanges(mainWindow)
+        if (action === 'cancel') return { success: false }
+      }
+
+      const proceed = await promptSmtpBackup(mainWindow)
+      if (!proceed) return { success: false }
+
+      await closeActiveFile()
+      sendFileStatus()
+      return { success: true }
+    })
+
+    ipcMain.handle('file:recent-get', async () => {
+      return getRecentFiles()
+    })
+
+    ipcMain.handle('file:recent-remove', async (_event, filePath) => {
+      await removeRecentFile(filePath)
+      return
+    })
+
+    ipcMain.handle('app:version', () => {
+      return app.getVersion()
+    })
+
+    ipcMain.handle('app:exit', () => {
+      mainWindow?.close()
+    })
+
+    ipcMain.handle('app:set-theme', (_event, theme: 'light' | 'dark') => {
+      if (mainWindow) {
+        if (theme === 'light') {
+          mainWindow.setTitleBarOverlay({ color: '#00000000', symbolColor: '#000000' })
+        } else {
+          mainWindow.setTitleBarOverlay({ color: '#00000000', symbolColor: '#ffffff' })
+        }
+      }
+    })
+
+    // Manual SMTP backup email trigger
+    ipcMain.handle('file:send-backup', async () => {
+      const filePath = getActiveFilePath()
+      if (!filePath) return { success: false, error: 'Açık dosya yok' }
+
+      // Save changes first
+      await saveFile()
+
+      const smtpConfig = await getSmtpConfig()
+      if (!smtpConfig)
+        return {
+          success: false,
+          error: 'SMTP ayarları eksik veya yedekleme e-postası aktif değil.'
+        }
+
+      return sendBackupEmail(filePath, smtpConfig)
+    })
+
+    // Auto-updater Handlers
+    ipcMain.handle('file:check-updates', async () => {
+      if (app.isPackaged) {
+        try {
+          return await autoUpdater.checkForUpdates()
+        } catch (e) {
+          console.error('Error checking updates:', e)
+          throw e
+        }
+      }
+      return { versionInfo: { version: app.getVersion() } }
+    })
+
+    ipcMain.handle('file:restart-and-install', async () => {
+      autoUpdater.quitAndInstall()
+    })
+
+    // Auto-updater Listeners
+    autoUpdater.on('update-available', (info) => {
+      mainWindow?.webContents.send('update-available', info)
+    })
+
+    autoUpdater.on('update-not-available', () => {
+      mainWindow?.webContents.send('update-not-available')
+    })
+
+    autoUpdater.on('update-downloaded', (info) => {
+      mainWindow?.webContents.send('update-downloaded', info)
+    })
+
+    autoUpdater.on('error', (err) => {
+      console.error('AutoUpdater error:', err)
+    })
+
+    createWindow()
+
+    app.on('activate', function () {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    })
   })
-})
 }
 
 // Quit when all windows are closed, except on macOS.

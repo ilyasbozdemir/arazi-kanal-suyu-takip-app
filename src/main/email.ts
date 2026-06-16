@@ -15,7 +15,7 @@ export async function sendBackupEmail(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const isSecure = Number(config.port) === 465
-    
+
     const transporter = nodemailer.createTransport({
       host: config.host,
       port: Number(config.port),

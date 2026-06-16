@@ -1,6 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { Search, Edit2, Trash2, Clock, Coins, Save, X, Printer, AlertCircle, Grid, FormInput, Plus, CheckCircle2 } from 'lucide-react'
+import {
+  Search,
+  Edit2,
+  Trash2,
+  Clock,
+  Coins,
+  Save,
+  X,
+  Printer,
+  AlertCircle,
+  Grid,
+  FormInput,
+  Plus,
+  CheckCircle2
+} from 'lucide-react'
 
 interface Sulama {
   id: number
@@ -44,14 +58,18 @@ interface SulamalarProps {
   onViewModeChange: (mode: 'standard' | 'excel') => void
 }
 
-export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps): React.JSX.Element {
+export default function Sulamalar({
+  viewMode,
+  onViewModeChange
+}: SulamalarProps): React.JSX.Element {
   const [sulamalar, setSulamalar] = useState<Sulama[]>([])
   const [tasinmazlar, setTasinmazlar] = useState<Tasinmaz[]>([])
   const [gorevliler, setGorevliler] = useState<Gorevli[]>([])
 
   const [search, setSearch] = useState('')
   const [filterOdeme, setFilterOdeme] = useState('Hepsi')
-  
+  const [pageSizeLimit, setPageSizeLimit] = useState<number>(0) // 0 = Hepsi
+
   const [editingId, setEditingId] = useState<number | null>(null)
   const [showPrintModal, setShowPrintModal] = useState<Sulama | null>(null)
 
@@ -60,7 +78,7 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
   const [fisGirisYontemi, setFisGirisYontemi] = useState<'liste' | 'hizli'>('liste')
   const [fisNoGiris, setFisNoGiris] = useState('')
   const [bulunanTasinmazSahibi, setBulunanTasinmazSahibi] = useState<string | null>(null)
-  
+
   const [gorevliId, setGorevliId] = useState('')
   const [sulamaTarihi, setSulamaTarihi] = useState(new Date().toISOString().split('T')[0])
   const [sulamaSuresiSaat, setSulamaSuresiSaat] = useState('')
@@ -105,13 +123,17 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
       setTasinmazlar(props)
 
       // Load fis_giris_yontemi from settings
-      const ayarlarRes = await window.api.dbQuery("SELECT deger FROM ayarlar WHERE anahtar = 'fis_giris_yontemi'")
+      const ayarlarRes = await window.api.dbQuery(
+        "SELECT deger FROM ayarlar WHERE anahtar = 'fis_giris_yontemi'"
+      )
       if (ayarlarRes && ayarlarRes.length > 0) {
         setFisGirisYontemi(ayarlarRes[0].deger as 'liste' | 'hizli')
       }
 
       // Load active officers for dropdown
-      const officers = await window.api.dbQuery('SELECT * FROM gorevliler WHERE aktif = 1 ORDER BY ad_soyad ASC')
+      const officers = await window.api.dbQuery(
+        'SELECT * FROM gorevliler WHERE aktif = 1 ORDER BY ad_soyad ASC'
+      )
       setGorevliler(officers)
 
       // Set default officer for new row state if not set
@@ -337,9 +359,9 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
     onViewModeChange('standard') // Switch to standard view to edit in form
     setEditingId(s.id)
     setTasinmazId(s.tasinmaz_id.toString())
-    
+
     // Auto-fill fisNoGiris if in hizli mode
-    const t = tasinmazlar.find(x => x.id === s.tasinmaz_id)
+    const t = tasinmazlar.find((x) => x.id === s.tasinmaz_id)
     if (t && t.ada && t.parsel) {
       setFisNoGiris(`${t.ada}-${t.parsel}`)
       setBulunanTasinmazSahibi(`${t.tapu_sahibi} (${t.mahalle_koy})`)
@@ -394,13 +416,17 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
   const handleFisNoChange = (val: string) => {
     setFisNoGiris(val)
     // format is expected to be "Ada-Parsel" or "Ada/Parsel" or "Ada Parsel"
-    const parts = val.replace(/[\/\\]/g, '-').replace(/\s+/g, '-').split('-').map(s => s.trim())
-    
+    const parts = val
+      .replace(/[\/\\]/g, '-')
+      .replace(/\s+/g, '-')
+      .split('-')
+      .map((s) => s.trim())
+
     if (parts.length >= 2 && parts[0] && parts[1]) {
       const ada = parts[0]
       const parsel = parts[1]
-      
-      const match = tasinmazlar.find(t => t.ada === ada && t.parsel === parsel)
+
+      const match = tasinmazlar.find((t) => t.ada === ada && t.parsel === parsel)
       if (match) {
         setTasinmazId(match.id.toString())
         setBulunanTasinmazSahibi(`${match.tapu_sahibi} (${match.mahalle_koy})`)
@@ -428,29 +454,34 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
     return matchesSearch && matchesOdeme
   })
 
+  // Apply page size limit
+  const paginatedSulamalar =
+    pageSizeLimit > 0 ? filteredSulamalar.slice(0, pageSizeLimit) : filteredSulamalar
+
   // Virtual scrollers
   const standardVirtualizer = useVirtualizer({
-    count: filteredSulamalar.length,
+    count: paginatedSulamalar.length,
     getScrollElement: () => standardListRef.current,
     estimateSize: () => 64,
-    overscan: 10,
+    overscan: 10
   })
 
   const excelVirtualizer = useVirtualizer({
-    count: filteredSulamalar.length,
+    count: paginatedSulamalar.length,
     getScrollElement: () => excelListRef.current,
     estimateSize: () => 38,
-    overscan: 10,
+    overscan: 10
   })
 
   return (
     <div className="space-y-6 h-full flex flex-col no-print">
-      
       {/* Header & View Mode Switcher */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-white">Fiş Girişi</h1>
-          <p className="text-slate-400 mt-1">Yapılan arazi sulamalarını kaydedin, ücret hesaplayın ve makbuz yazdırın.</p>
+          <p className="text-slate-400 mt-1">
+            Yapılan arazi sulamalarını kaydedin, ücret hesaplayın ve makbuz yazdırın.
+          </p>
         </div>
 
         {/* View Mode Toggle Controls */}
@@ -466,7 +497,7 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
             <FormInput className="w-3.5 h-3.5" />
             <span>Form Görünümü</span>
           </button>
-          
+
           <button
             onClick={() => onViewModeChange('excel')}
             className={`flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
@@ -493,7 +524,7 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        
+
         <div className="flex items-center space-x-2 bg-slate-900/40 border border-white/5 rounded-xl px-2.5">
           <span className="text-slate-400 whitespace-nowrap">Ödeme Durumu:</span>
           <select
@@ -501,9 +532,15 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
             value={filterOdeme}
             onChange={(e) => setFilterOdeme(e.target.value)}
           >
-            <option className="bg-slate-950 text-slate-200" value="Hepsi">Hepsi</option>
-            <option className="bg-slate-950 text-slate-200" value="Ödendi">Ödendi</option>
-            <option className="bg-slate-950 text-slate-200" value="Ödenmedi">Ödenmedi</option>
+            <option className="bg-slate-950 text-slate-200" value="Hepsi">
+              Hepsi
+            </option>
+            <option className="bg-slate-950 text-slate-200" value="Ödendi">
+              Ödendi
+            </option>
+            <option className="bg-slate-950 text-slate-200" value="Ödenmedi">
+              Ödenmedi
+            </option>
           </select>
         </div>
 
@@ -518,12 +555,12 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
               title="Form/Excel modlarında kullanılacak saatlik sulama tarifesi"
             />
           </div>
-          
+
           <button
             type="button"
             className={`px-2 py-0.5 rounded text-[9px] uppercase font-bold border transition ${
-              isCalculated 
-                ? 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30' 
+              isCalculated
+                ? 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30'
                 : 'bg-slate-800 text-slate-400 border-transparent'
             }`}
             onClick={() => setIsCalculated(!isCalculated)}
@@ -539,120 +576,151 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
       {viewMode === 'standard' ? (
         /* STANDARD FORM VIEW */
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
-          
           {/* Slips List with Virtual Scrolling */}
           <div className="lg:col-span-2 flex flex-col min-h-0">
             <div className="glass-card rounded-2xl flex-1 flex flex-col overflow-hidden p-4">
-              {/* Sticky Header */}
-              <div className="overflow-x-auto shrink-0">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-800 font-semibold text-slate-400 uppercase tracking-wider">
-                      <th className="py-3 px-2">Tarih</th>
-                      <th className="py-3 px-2">Taşınmaz (Tapu Sahibi)</th>
-                      <th className="py-3 px-2">Görevli</th>
-                      <th className="py-3 px-2 text-right">Süre (Saat)</th>
-                      <th className="py-3 px-2 text-right">Ücret</th>
-                      <th className="py-3 px-2 text-center">Durum</th>
-                      <th className="py-3 px-2 text-right">İşlemler</th>
-                    </tr>
-                  </thead>
-                </table>
+              {/* Header and Page Limit Control */}
+              <div className="flex justify-between items-center mb-3 text-xs shrink-0">
+                <span className="text-slate-400 font-medium">
+                  {filteredSulamalar.length} kayıt bulundu
+                </span>
+                <div className="flex items-center space-x-2">
+                  <span className="text-slate-400">Göster:</span>
+                  <select
+                    className="bg-slate-900/40 border border-white/10 rounded-lg px-2 py-1 text-slate-200 outline-none cursor-pointer"
+                    value={pageSizeLimit}
+                    onChange={(e) => setPageSizeLimit(Number(e.target.value))}
+                  >
+                    <option value={0}>Hepsi</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                    <option value={250}>250</option>
+                    <option value={500}>500</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Grid Header */}
+              <div className="grid grid-cols-12 gap-2 border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider py-3 px-2 shrink-0">
+                <div className="col-span-2">Tarih</div>
+                <div className="col-span-3">Taşınmaz (Sahibi)</div>
+                <div className="col-span-2">Görevli</div>
+                <div className="col-span-1 text-right">Süre (Sa)</div>
+                <div className="col-span-1 text-right">Ücret</div>
+                <div className="col-span-2 text-center">Durum</div>
+                <div className="col-span-1 text-right">İşlemler</div>
               </div>
 
               {/* Virtual Scroll Area */}
-              <div ref={standardListRef} className="flex-1 overflow-y-auto overflow-x-auto min-h-0">
-                {filteredSulamalar.length === 0 ? (
+              <div
+                ref={standardListRef}
+                className="flex-1 overflow-y-auto overflow-x-hidden min-h-0"
+              >
+                {paginatedSulamalar.length === 0 ? (
                   <div className="text-center py-8 text-slate-500 text-sm">
                     Kriterlere uygun sulama fişi bulunamadı.
                   </div>
                 ) : (
-                  <div style={{ height: `${standardVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
-                    <table className="w-full text-left border-collapse text-xs">
-                      <tbody>
-                        {standardVirtualizer.getVirtualItems().map((virtualRow) => {
-                          const s = filteredSulamalar[virtualRow.index]
-                          return (
-                            <tr 
-                              key={s.id}
-                              data-index={virtualRow.index}
-                              ref={standardVirtualizer.measureElement}
-                              style={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                width: '100%',
-                                transform: `translateY(${virtualRow.start}px)`,
-                                display: 'table-row',
-                              }}
-                              className={`border-b border-slate-800/50 hover:bg-slate-800/10 text-sm text-slate-350 transition ${
-                                editingId === s.id ? 'bg-indigo-500/5 border-indigo-500/30' : ''
+                  <div
+                    style={{
+                      height: `${standardVirtualizer.getTotalSize()}px`,
+                      width: '100%',
+                      position: 'relative'
+                    }}
+                  >
+                    {standardVirtualizer.getVirtualItems().map((virtualRow) => {
+                      const s = paginatedSulamalar[virtualRow.index]
+                      return (
+                        <div
+                          key={s.id}
+                          data-index={virtualRow.index}
+                          ref={standardVirtualizer.measureElement}
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            transform: `translateY(${virtualRow.start}px)`
+                          }}
+                          className={`grid grid-cols-12 gap-2 items-center border-b border-slate-800/50 hover:bg-slate-800/10 text-sm text-slate-350 transition py-3 px-2 ${
+                            editingId === s.id ? 'bg-indigo-500/5 border-indigo-500/30' : ''
+                          }`}
+                        >
+                          <div className="col-span-2 whitespace-nowrap truncate pr-1 text-xs">
+                            {new Date(s.sulama_tarihi).toLocaleDateString('tr-TR')}
+                          </div>
+                          <div className="col-span-3 truncate pr-2">
+                            <span
+                              className="font-semibold text-white block truncate"
+                              title={s.tapu_sahibi}
+                            >
+                              {s.tapu_sahibi}
+                            </span>
+                            <span className="text-xs text-slate-450 block truncate">
+                              {s.mahalle_koy} | {s.ada}-{s.parsel}
+                            </span>
+                          </div>
+                          <div
+                            className="col-span-2 truncate text-slate-300 pr-1 text-xs"
+                            title={s.ad_soyad}
+                          >
+                            {s.ad_soyad}
+                          </div>
+                          <div className="col-span-1 text-right text-indigo-300 whitespace-nowrap font-medium text-xs">
+                            {s.sulama_suresi_saat} sa
+                          </div>
+                          <div
+                            className="col-span-1 text-right font-medium text-white truncate text-xs"
+                            title={`₺ ${s.ucret}`}
+                          >
+                            ₺{s.ucret.toLocaleString('tr-TR', { minimumFractionDigits: 0 })}
+                          </div>
+                          <div className="col-span-2 text-center">
+                            <span
+                              className={`inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                                s.odeme_durumu === 'Ödendi'
+                                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                  : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                               }`}
                             >
-                              <td className="py-3 px-2 whitespace-nowrap">
-                                {new Date(s.sulama_tarihi).toLocaleDateString('tr-TR')}
-                              </td>
-                              <td className="py-3 px-2">
-                                <span className="font-semibold text-white block">{s.tapu_sahibi}</span>
-                                <span className="text-xs text-slate-450 block">
-                                  {s.mahalle_koy} | Ada {s.ada} Parsel {s.parsel}
-                                </span>
-                              </td>
-                              <td className="py-3 px-2 whitespace-nowrap text-slate-300">
-                                {s.ad_soyad}
-                              </td>
-                              <td className="py-3 px-2 text-right text-indigo-300 whitespace-nowrap font-medium">
-                                {s.sulama_suresi_saat} sa
-                              </td>
-                              <td className="py-3 px-2 text-right font-medium text-white">
-                                ₺ {s.ucret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
-                              </td>
-                              <td className="py-3 px-2 text-center">
-                                <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${
-                                  s.odeme_durumu === 'Ödendi' 
-                                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                                    : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                                }`}>
-                                  {s.odeme_durumu}
-                                </span>
-                              </td>
-                              <td className="py-3 px-2 text-right">
-                                <div className="flex justify-end space-x-1">
-                                  <button
-                                    onClick={() => setShowPrintModal(s)}
-                                    title="Fiş Yazdır"
-                                    className="p-1.5 text-slate-300 hover:text-slate-100 bg-slate-800 hover:bg-slate-700 rounded-lg transition"
-                                  >
-                                    <Printer className="h-3.5 w-3.5" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleEdit(s)}
-                                    title="Düzenle"
-                                    className="p-1.5 text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 rounded-lg transition"
-                                  >
-                                    <Edit2 className="h-3.5 w-3.5" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDelete(s.id)}
-                                    title="Sil"
-                                    className="p-1.5 text-rose-400 hover:text-rose-350 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg transition"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
+                              {s.odeme_durumu}
+                            </span>
+                          </div>
+                          <div className="col-span-1 flex justify-end space-x-1">
+                            <button
+                              onClick={() => setShowPrintModal(s)}
+                              title="Fiş Yazdır"
+                              className="p-1.5 text-slate-300 hover:text-slate-100 bg-slate-800 hover:bg-slate-700 rounded-lg transition"
+                            >
+                              <Printer className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleEdit(s)}
+                              title="Düzenle"
+                              className="p-1.5 text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 rounded-lg transition"
+                            >
+                              <Edit2 className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(s.id)}
+                              title="Sil"
+                              className="p-1.5 text-rose-400 hover:text-rose-350 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg transition"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
               </div>
 
               {/* Record Count Footer */}
               <div className="shrink-0 pt-3 border-t border-slate-800/30 mt-2 text-[10px] text-slate-500 flex justify-between">
-                <span>{filteredSulamalar.length} kayıt listeleniyor</span>
+                <span>
+                  {paginatedSulamalar.length} / {filteredSulamalar.length} kayıt listeleniyor
+                </span>
                 <span>Toplam: {sulamalar.length} fiş</span>
               </div>
             </div>
@@ -666,8 +734,8 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
                 {editingId ? 'Fişi Düzenle' : 'Yeni Fiş Girişi'}
               </h3>
               {editingId && (
-                <button 
-                  onClick={resetForm} 
+                <button
+                  onClick={resetForm}
                   className="text-slate-400 hover:text-slate-200"
                   title="İptal Et"
                 >
@@ -677,7 +745,6 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
             </div>
 
             <form onSubmit={handleSave} className="space-y-4 text-xs">
-              
               {error && (
                 <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-start space-x-2 text-rose-400 text-xs">
                   <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
@@ -688,24 +755,31 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
               {/* Select Tasinmaz or Fast Entry */}
               {fisGirisYontemi === 'liste' ? (
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider">Taşınmaz (Arazi Sahibi) *</label>
+                  <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider">
+                    Taşınmaz (Arazi Sahibi) *
+                  </label>
                   <select
                     className="w-full px-3 py-2.5 rounded-xl glass-input text-xs"
                     value={tasinmazId}
                     onChange={(e) => setTasinmazId(e.target.value)}
                     required
                   >
-                    <option className="bg-slate-950 text-slate-400" value="">-- Mülk Seçin --</option>
+                    <option className="bg-slate-950 text-slate-400" value="">
+                      -- Mülk Seçin --
+                    </option>
                     {tasinmazlar.map((t) => (
                       <option key={t.id} className="bg-slate-950 text-slate-200" value={t.id}>
-                        {t.tapu_sahibi} - {t.mahalle_koy} (Ada {t.ada || '-'} Parsel {t.parsel || '-'})
+                        {t.tapu_sahibi} - {t.mahalle_koy} (Ada {t.ada || '-'} Parsel{' '}
+                        {t.parsel || '-'})
                       </option>
                     ))}
                   </select>
                 </div>
               ) : (
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider">Ada-Parsel Fiş Numarası *</label>
+                  <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider">
+                    Ada-Parsel Fiş Numarası *
+                  </label>
                   <div className="relative">
                     <input
                       type="text"
@@ -727,21 +801,27 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
                       Eşleşen taşınmaz bulunamadı!
                     </div>
                   ) : (
-                    <div className="text-[10px] text-slate-500 mt-1">Araya tire koyarak yazın (Örn: Ada-Parsel)</div>
+                    <div className="text-[10px] text-slate-500 mt-1">
+                      Araya tire koyarak yazın (Örn: Ada-Parsel)
+                    </div>
                   )}
                 </div>
               )}
 
               {/* Select Gorevli */}
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider">Sulama Sorumlusu (Görevli) *</label>
+                <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider">
+                  Sulama Sorumlusu (Görevli) *
+                </label>
                 <select
                   className="w-full px-3 py-2.5 rounded-xl glass-input text-xs"
                   value={gorevliId}
                   onChange={(e) => setGorevliId(e.target.value)}
                   required
                 >
-                  <option className="bg-slate-950 text-slate-400" value="">-- Görevli Seçin --</option>
+                  <option className="bg-slate-950 text-slate-400" value="">
+                    -- Görevli Seçin --
+                  </option>
                   {gorevliler.map((g) => (
                     <option key={g.id} className="bg-slate-950 text-slate-200" value={g.id}>
                       {g.ad_soyad} ({g.gorev || 'Görevli'})
@@ -753,7 +833,9 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
               {/* Grid Tarih / Süre */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider">Tarih</label>
+                  <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider">
+                    Tarih
+                  </label>
                   <input
                     type="date"
                     className="w-full px-3 py-2 rounded-xl glass-input text-xs"
@@ -763,7 +845,9 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider">Süre (Saat) *</label>
+                  <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider">
+                    Süre (Saat) *
+                  </label>
                   <input
                     type="number"
                     step="any"
@@ -779,7 +863,9 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
               {/* Calculations Area */}
               <div className="bg-indigo-950/20 border border-indigo-500/10 p-3 rounded-xl space-y-2">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider">Toplam Ücret Tutar (₺) *</label>
+                  <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider">
+                    Toplam Ücret Tutar (₺) *
+                  </label>
                   <div className="relative">
                     <Coins className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
                     <input
@@ -788,7 +874,9 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
                       placeholder="0.00"
                       disabled={isCalculated}
                       className={`w-full pl-8 pr-3 py-2 rounded-xl text-sm font-bold ${
-                        isCalculated ? 'bg-slate-900/80 border border-white/5 text-indigo-300' : 'glass-input'
+                        isCalculated
+                          ? 'bg-slate-900/80 border border-white/5 text-indigo-300'
+                          : 'glass-input'
                       }`}
                       value={ucret}
                       onChange={(e) => setUcret(e.target.value)}
@@ -805,8 +893,8 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
                   <button
                     type="button"
                     className={`px-3 py-1 rounded-lg text-xs font-bold border transition ${
-                      odemeDurumu === 'Ödendi' 
-                        ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' 
+                      odemeDurumu === 'Ödendi'
+                        ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
                         : 'bg-slate-800 text-slate-400 border-transparent hover:bg-slate-700'
                     }`}
                     onClick={() => setOdemeDurumu('Ödendi')}
@@ -816,8 +904,8 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
                   <button
                     type="button"
                     className={`px-3 py-1 rounded-lg text-xs font-bold border transition ${
-                      odemeDurumu === 'Ödenmedi' 
-                        ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' 
+                      odemeDurumu === 'Ödenmedi'
+                        ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
                         : 'bg-slate-800 text-slate-400 border-transparent hover:bg-slate-700'
                     }`}
                     onClick={() => setOdemeDurumu('Ödenmedi')}
@@ -829,7 +917,9 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
 
               {/* Input Aciklama */}
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider">Açıklama / Fiş Notu</label>
+                <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider">
+                  Açıklama / Fiş Notu
+                </label>
                 <textarea
                   placeholder="Örn: Kesinti yapıldı..."
                   className="w-full px-3 py-2 rounded-xl glass-input text-xs h-16 resize-none"
@@ -888,7 +978,14 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
                 Kriterlere uygun sulama fişi bulunamadı.
               </div>
             ) : (
-              <div style={{ height: `${excelVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative', minWidth: '950px' }}>
+              <div
+                style={{
+                  height: `${excelVirtualizer.getTotalSize()}px`,
+                  width: '100%',
+                  position: 'relative',
+                  minWidth: '950px'
+                }}
+              >
                 <table className="w-full text-left border-collapse text-xs table-fixed min-w-[950px]">
                   <tbody>
                     {excelVirtualizer.getVirtualItems().map((virtualRow) => {
@@ -904,7 +1001,7 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
                             left: 0,
                             width: '100%',
                             transform: `translateY(${virtualRow.start}px)`,
-                            display: 'table-row',
+                            display: 'table-row'
                           }}
                           className="border-b border-slate-800/40 hover:bg-slate-800/5 text-slate-350"
                         >
@@ -914,7 +1011,9 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
                               type="date"
                               className="bg-slate-950/20 hover:bg-slate-900 focus:bg-slate-900 border border-transparent focus:border-indigo-500 rounded px-1 py-1 w-full text-xs text-slate-300"
                               value={s.sulama_tarihi}
-                              onChange={(e) => updateExcelRow(s.id, 'sulama_tarihi', e.target.value)}
+                              onChange={(e) =>
+                                updateExcelRow(s.id, 'sulama_tarihi', e.target.value)
+                              }
                             />
                           </td>
                           {/* Taşınmaz */}
@@ -925,7 +1024,11 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
                               onChange={(e) => updateExcelRow(s.id, 'tasinmaz_id', e.target.value)}
                             >
                               {tasinmazlar.map((t) => (
-                                <option key={t.id} className="bg-slate-950 text-slate-200" value={t.id}>
+                                <option
+                                  key={t.id}
+                                  className="bg-slate-950 text-slate-200"
+                                  value={t.id}
+                                >
                                   {t.tapu_sahibi} ({t.mahalle_koy || 'Mülk'})
                                 </option>
                               ))}
@@ -939,7 +1042,11 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
                               onChange={(e) => updateExcelRow(s.id, 'gorevli_id', e.target.value)}
                             >
                               {gorevliler.map((g) => (
-                                <option key={g.id} className="bg-slate-950 text-slate-200" value={g.id}>
+                                <option
+                                  key={g.id}
+                                  className="bg-slate-950 text-slate-200"
+                                  value={g.id}
+                                >
                                   {g.ad_soyad}
                                 </option>
                               ))}
@@ -952,7 +1059,9 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
                               step="any"
                               className="bg-slate-950/20 hover:bg-slate-900 focus:bg-slate-900 border border-transparent focus:border-indigo-500 rounded px-1 py-1 w-full text-xs text-right text-indigo-300 font-semibold"
                               value={s.sulama_suresi_saat}
-                              onChange={(e) => updateExcelRow(s.id, 'sulama_suresi_saat', e.target.value)}
+                              onChange={(e) =>
+                                updateExcelRow(s.id, 'sulama_suresi_saat', e.target.value)
+                              }
                             />
                           </td>
                           {/* Ücret */}
@@ -962,7 +1071,9 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
                               step="any"
                               disabled={isCalculated}
                               className={`border border-transparent rounded px-1 py-1 w-full text-xs text-right font-bold ${
-                                isCalculated ? 'bg-slate-950/40 text-slate-400' : 'bg-slate-950/20 hover:bg-slate-900 focus:bg-slate-900 focus:border-indigo-500 text-white'
+                                isCalculated
+                                  ? 'bg-slate-950/40 text-slate-400'
+                                  : 'bg-slate-950/20 hover:bg-slate-900 focus:bg-slate-900 focus:border-indigo-500 text-white'
                               }`}
                               value={s.ucret}
                               onChange={(e) => updateExcelRow(s.id, 'ucret', e.target.value)}
@@ -972,15 +1083,19 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
                           <td className="p-1" style={{ width: '10%' }}>
                             <select
                               className={`border border-transparent rounded px-1 py-1 w-full text-xs text-center font-semibold cursor-pointer ${
-                                s.odeme_durumu === 'Ödendi' 
-                                  ? 'bg-emerald-500/10 text-emerald-400' 
+                                s.odeme_durumu === 'Ödendi'
+                                  ? 'bg-emerald-500/10 text-emerald-400'
                                   : 'bg-amber-500/10 text-amber-400'
                               }`}
                               value={s.odeme_durumu}
                               onChange={(e) => updateExcelRow(s.id, 'odeme_durumu', e.target.value)}
                             >
-                              <option className="bg-slate-950 text-emerald-400" value="Ödendi">Ödendi</option>
-                              <option className="bg-slate-950 text-amber-400" value="Ödenmedi">Ödenmedi</option>
+                              <option className="bg-slate-950 text-emerald-400" value="Ödendi">
+                                Ödendi
+                              </option>
+                              <option className="bg-slate-950 text-amber-400" value="Ödenmedi">
+                                Ödenmedi
+                              </option>
                             </select>
                           </td>
                           {/* Açıklama */}
@@ -1023,7 +1138,9 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
                       type="date"
                       className="bg-slate-900 border border-indigo-500/25 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-slate-300"
                       value={newRow.sulama_tarihi}
-                      onChange={(e) => setNewRow((prev) => ({ ...prev, sulama_tarihi: e.target.value }))}
+                      onChange={(e) =>
+                        setNewRow((prev) => ({ ...prev, sulama_tarihi: e.target.value }))
+                      }
                     />
                   </td>
                   {/* Taşınmaz */}
@@ -1031,12 +1148,15 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
                     <select
                       className="bg-slate-900 border border-indigo-500/25 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-indigo-300 font-bold"
                       value={newRow.tasinmaz_id}
-                      onChange={(e) => setNewRow((prev) => ({ ...prev, tasinmaz_id: e.target.value }))}
+                      onChange={(e) =>
+                        setNewRow((prev) => ({ ...prev, tasinmaz_id: e.target.value }))
+                      }
                     >
                       <option value="">-- Taşınmaz Seçin --</option>
                       {tasinmazlar.map((t) => (
                         <option key={t.id} className="bg-slate-950 text-slate-200" value={t.id}>
-                          {t.tapu_sahibi} - {t.mahalle_koy} (Ada {t.ada || '-'} Parsel {t.parsel || '-'})
+                          {t.tapu_sahibi} - {t.mahalle_koy} (Ada {t.ada || '-'} Parsel{' '}
+                          {t.parsel || '-'})
                         </option>
                       ))}
                     </select>
@@ -1046,7 +1166,9 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
                     <select
                       className="bg-slate-900 border border-indigo-500/25 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-slate-300"
                       value={newRow.gorevli_id}
-                      onChange={(e) => setNewRow((prev) => ({ ...prev, gorevli_id: e.target.value }))}
+                      onChange={(e) =>
+                        setNewRow((prev) => ({ ...prev, gorevli_id: e.target.value }))
+                      }
                     >
                       {gorevliler.map((g) => (
                         <option key={g.id} className="bg-slate-950 text-slate-200" value={g.id}>
@@ -1063,7 +1185,9 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
                       placeholder="Saat"
                       className="bg-slate-900 border border-indigo-500/25 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-right text-indigo-300 font-semibold"
                       value={newRow.sulama_suresi_saat}
-                      onChange={(e) => setNewRow((prev) => ({ ...prev, sulama_suresi_saat: e.target.value }))}
+                      onChange={(e) =>
+                        setNewRow((prev) => ({ ...prev, sulama_suresi_saat: e.target.value }))
+                      }
                     />
                   </td>
                   {/* Ücret */}
@@ -1074,7 +1198,9 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
                       placeholder="Tutar"
                       disabled={isCalculated}
                       className={`border rounded px-1.5 py-1 w-full text-xs text-right font-bold ${
-                        isCalculated ? 'bg-slate-950/40 border-indigo-500/10 text-slate-400' : 'bg-slate-900 border-indigo-500/25 focus:border-indigo-500 text-white'
+                        isCalculated
+                          ? 'bg-slate-950/40 border-indigo-500/10 text-slate-400'
+                          : 'bg-slate-900 border-indigo-500/25 focus:border-indigo-500 text-white'
                       }`}
                       value={newRow.ucret}
                       onChange={(e) => setNewRow((prev) => ({ ...prev, ucret: e.target.value }))}
@@ -1085,10 +1211,16 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
                     <select
                       className="bg-slate-900 border border-indigo-500/25 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-center font-semibold text-slate-300"
                       value={newRow.odeme_durumu}
-                      onChange={(e) => setNewRow((prev) => ({ ...prev, odeme_durumu: e.target.value }))}
+                      onChange={(e) =>
+                        setNewRow((prev) => ({ ...prev, odeme_durumu: e.target.value }))
+                      }
                     >
-                      <option className="bg-slate-950 text-emerald-400" value="Ödendi">Ödendi</option>
-                      <option className="bg-slate-950 text-amber-400" value="Ödenmedi">Ödenmedi</option>
+                      <option className="bg-slate-950 text-emerald-400" value="Ödendi">
+                        Ödendi
+                      </option>
+                      <option className="bg-slate-950 text-amber-400" value="Ödenmedi">
+                        Ödenmedi
+                      </option>
                     </select>
                   </td>
                   {/* Açıklama */}
@@ -1128,13 +1260,17 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
       {showPrintModal && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white text-slate-900 w-full max-w-sm rounded-2xl shadow-2xl p-6 flex flex-col justify-between border border-slate-200 no-print">
-            
             {/* Ticket Content (This will be printed) */}
             <div id="receipt-print" className="font-mono text-xs text-slate-800 space-y-4">
               <div className="text-center space-y-1 pb-4 border-b border-dashed border-slate-300">
-                <h4 className="text-base font-bold uppercase tracking-wide text-slate-900">ARAZİ SULAMA FİŞİ</h4>
+                <h4 className="text-base font-bold uppercase tracking-wide text-slate-900">
+                  ARAZİ SULAMA FİŞİ
+                </h4>
                 <p className="text-[10px] text-slate-500">Kanal Suyu Takip Programı</p>
-                <p className="text-[10px]">{new Date(showPrintModal.sulama_tarihi).toLocaleDateString('tr-TR')} - {new Date().toLocaleTimeString('tr-TR')}</p>
+                <p className="text-[10px]">
+                  {new Date(showPrintModal.sulama_tarihi).toLocaleDateString('tr-TR')} -{' '}
+                  {new Date().toLocaleTimeString('tr-TR')}
+                </p>
               </div>
 
               <div className="space-y-1.5 py-2">
@@ -1144,11 +1280,15 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
                 </div>
                 <div className="flex justify-between">
                   <span className="font-semibold">TAPU SAHİBİ:</span>
-                  <span className="text-right font-bold text-slate-950">{showPrintModal.tapu_sahibi}</span>
+                  <span className="text-right font-bold text-slate-950">
+                    {showPrintModal.tapu_sahibi}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="font-semibold">ADA/PARSEL:</span>
-                  <span>{showPrintModal.ada || '-'} / {showPrintModal.parsel || '-'}</span>
+                  <span>
+                    {showPrintModal.ada || '-'} / {showPrintModal.parsel || '-'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="font-semibold">KÖY/MAHALLE:</span>
@@ -1171,11 +1311,15 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="font-bold">TOPLAM TUTAR:</span>
-                  <span className="font-extrabold text-slate-950">₺ {showPrintModal.ucret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</span>
+                  <span className="font-extrabold text-slate-950">
+                    ₺ {showPrintModal.ucret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>ÖDEME DURUMU:</span>
-                  <span className={`font-bold uppercase ${showPrintModal.odeme_durumu === 'Ödendi' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                  <span
+                    className={`font-bold uppercase ${showPrintModal.odeme_durumu === 'Ödendi' ? 'text-emerald-600' : 'text-amber-600'}`}
+                  >
                     {showPrintModal.odeme_durumu}
                   </span>
                 </div>
@@ -1210,7 +1354,6 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
                 Kapat
               </button>
             </div>
-
           </div>
         </div>
       )}
@@ -1221,20 +1364,54 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
           <div className="text-center space-y-1 pb-2 border-b border-dashed border-black">
             <h4 className="text-sm font-bold uppercase text-black">ARAZİ SULAMA FİŞİ</h4>
             <p className="text-[8px] text-black/70">Kanal Suyu Takip Programı</p>
-            <p className="text-[8px]">{new Date(showPrintModal.sulama_tarihi).toLocaleDateString('tr-TR')} - {new Date().toLocaleTimeString('tr-TR')}</p>
+            <p className="text-[8px]">
+              {new Date(showPrintModal.sulama_tarihi).toLocaleDateString('tr-TR')} -{' '}
+              {new Date().toLocaleTimeString('tr-TR')}
+            </p>
           </div>
           <div className="space-y-1 py-1">
-            <div className="flex justify-between"><span>FİŞ NO:</span><span>#000{showPrintModal.id}</span></div>
-            <div className="flex justify-between"><span>TAPU SAHİBİ:</span><span className="font-bold">{showPrintModal.tapu_sahibi}</span></div>
-            <div className="flex justify-between"><span>ADA/PARSEL:</span><span>{showPrintModal.ada || '-'} / {showPrintModal.parsel || '-'}</span></div>
-            <div className="flex justify-between"><span>KÖY/MAHALLE:</span><span>{showPrintModal.mahalle_koy || '-'}</span></div>
-            <div className="flex justify-between"><span>SU KANALI:</span><span>{showPrintModal.kanal_adi || '-'}</span></div>
-            <div className="flex justify-between"><span>GÖREVLİ:</span><span>{showPrintModal.ad_soyad}</span></div>
+            <div className="flex justify-between">
+              <span>FİŞ NO:</span>
+              <span>#000{showPrintModal.id}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>TAPU SAHİBİ:</span>
+              <span className="font-bold">{showPrintModal.tapu_sahibi}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>ADA/PARSEL:</span>
+              <span>
+                {showPrintModal.ada || '-'} / {showPrintModal.parsel || '-'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span>KÖY/MAHALLE:</span>
+              <span>{showPrintModal.mahalle_koy || '-'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>SU KANALI:</span>
+              <span>{showPrintModal.kanal_adi || '-'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>GÖREVLİ:</span>
+              <span>{showPrintModal.ad_soyad}</span>
+            </div>
           </div>
           <div className="border-t border-b border-dashed border-black py-2 space-y-1">
-            <div className="flex justify-between"><span>SULAMA SÜRESİ:</span><span className="font-bold">{showPrintModal.sulama_suresi_saat} Saat</span></div>
-            <div className="flex justify-between"><span>TOPLAM TUTAR:</span><span className="font-bold">₺ {showPrintModal.ucret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</span></div>
-            <div className="flex justify-between"><span>DURUM:</span><span className="font-bold uppercase">{showPrintModal.odeme_durumu}</span></div>
+            <div className="flex justify-between">
+              <span>SULAMA SÜRESİ:</span>
+              <span className="font-bold">{showPrintModal.sulama_suresi_saat} Saat</span>
+            </div>
+            <div className="flex justify-between">
+              <span>TOPLAM TUTAR:</span>
+              <span className="font-bold">
+                ₺ {showPrintModal.ucret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span>DURUM:</span>
+              <span className="font-bold uppercase">{showPrintModal.odeme_durumu}</span>
+            </div>
           </div>
           {showPrintModal.aciklama && (
             <div className="text-[8px] border border-black/10 p-1">
@@ -1246,7 +1423,6 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
           </div>
         </div>
       )}
-
     </div>
   )
 }

@@ -43,12 +43,12 @@ export default function Dashboard(): React.JSX.Element {
       // 1. Fetch counts
       const resTasinmaz = await window.api.dbQuery('SELECT COUNT(*) as count FROM tasinmazlar')
       const resGorevli = await window.api.dbQuery('SELECT COUNT(*) as count FROM gorevliler')
-      
+
       // 2. Fetch sums
       const resSulamalar = await window.api.dbQuery(
         'SELECT SUM(sulama_suresi_saat) as total_hours, SUM(ucret) as total_ucret FROM sulamalar'
       )
-      
+
       // 3. Fetch unpaid stats
       const resUnpaid = await window.api.dbQuery(
         "SELECT COUNT(*) as count, SUM(ucret) as total_unpaid FROM sulamalar WHERE odeme_durumu = 'Ödenmedi'"
@@ -150,7 +150,9 @@ export default function Dashboard(): React.JSX.Element {
           </div>
           <div>
             <p className="text-sm text-slate-400 font-medium">Toplam Sulama Süresi</p>
-            <h3 className="text-2xl font-bold text-white mt-1">{stats.totalHours.toFixed(1)} Saat</h3>
+            <h3 className="text-2xl font-bold text-white mt-1">
+              {stats.totalHours.toFixed(1)} Saat
+            </h3>
           </div>
         </div>
 
@@ -161,7 +163,9 @@ export default function Dashboard(): React.JSX.Element {
           </div>
           <div>
             <p className="text-sm text-slate-400 font-medium">Toplam Tahakkuk</p>
-            <h3 className="text-2xl font-bold text-white mt-1">₺ {stats.totalUcret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</h3>
+            <h3 className="text-2xl font-bold text-white mt-1">
+              ₺ {stats.totalUcret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+            </h3>
           </div>
         </div>
       </div>
@@ -175,13 +179,17 @@ export default function Dashboard(): React.JSX.Element {
               <ShieldAlert className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm text-slate-400 font-medium">Bekleyen Alacak (Ödenmeyen Fişler)</p>
+              <p className="text-sm text-slate-400 font-medium">
+                Bekleyen Alacak (Ödenmeyen Fişler)
+              </p>
               <h3 className="text-xl font-bold text-white mt-1">{stats.unpaidCount} Adet Fiş</h3>
             </div>
           </div>
           <div className="text-right">
             <p className="text-xs text-slate-400">Toplam Tutar</p>
-            <h3 className="text-2xl font-extrabold text-amber-400 mt-1">₺ {stats.unpaidAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</h3>
+            <h3 className="text-2xl font-extrabold text-amber-400 mt-1">
+              ₺ {stats.unpaidAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+            </h3>
           </div>
         </div>
 
@@ -194,14 +202,21 @@ export default function Dashboard(): React.JSX.Element {
             <div>
               <p className="text-sm text-slate-400 font-medium">Tahsil Edilen (Ödenen Fişler)</p>
               <h3 className="text-xl font-bold text-white mt-1">
-                {(stats.totalUcret > 0 ? ((stats.totalUcret - stats.unpaidAmount) / stats.totalUcret * 100) : 0).toFixed(0)}% Tahsilat Oranı
+                {(stats.totalUcret > 0
+                  ? ((stats.totalUcret - stats.unpaidAmount) / stats.totalUcret) * 100
+                  : 0
+                ).toFixed(0)}
+                % Tahsilat Oranı
               </h3>
             </div>
           </div>
           <div className="text-right">
             <p className="text-xs text-slate-400">Tahsil Edilen Tutar</p>
             <h3 className="text-2xl font-extrabold text-emerald-400 mt-1">
-              ₺ {(stats.totalUcret - stats.unpaidAmount).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+              ₺{' '}
+              {(stats.totalUcret - stats.unpaidAmount).toLocaleString('tr-TR', {
+                minimumFractionDigits: 2
+              })}
             </h3>
           </div>
         </div>
@@ -214,7 +229,7 @@ export default function Dashboard(): React.JSX.Element {
           <div>
             <h3 className="text-lg font-bold text-white mb-1">Kanallara Göre Sulama</h3>
             <p className="text-xs text-slate-400 mb-6">En çok sulanan su kanalları ve saatleri.</p>
-            
+
             {chartData.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-48 text-slate-500 text-sm">
                 Veri bulunmuyor
@@ -230,7 +245,7 @@ export default function Dashboard(): React.JSX.Element {
                         <span className="text-indigo-400">{item.total_hours.toFixed(1)} sa</span>
                       </div>
                       <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
-                        <div 
+                        <div
                           className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 rounded-full"
                           style={{ width: `${percent}%` }}
                         ></div>
@@ -273,22 +288,29 @@ export default function Dashboard(): React.JSX.Element {
                   </tr>
                 ) : (
                   recentSlips.map((slip) => (
-                    <tr key={slip.id} className="border-b border-slate-800/50 hover:bg-slate-800/20 text-sm text-slate-300 transition">
+                    <tr
+                      key={slip.id}
+                      className="border-b border-slate-800/50 hover:bg-slate-800/20 text-sm text-slate-300 transition"
+                    >
                       <td className="py-3 px-2 whitespace-nowrap">
                         {new Date(slip.sulama_tarihi).toLocaleDateString('tr-TR')}
                       </td>
                       <td className="py-3 px-2 font-medium text-white">{slip.tapu_sahibi}</td>
                       <td className="py-3 px-2">{slip.ad_soyad}</td>
-                      <td className="py-3 px-2 text-right text-indigo-300">{slip.sulama_suresi_saat} sa</td>
+                      <td className="py-3 px-2 text-right text-indigo-300">
+                        {slip.sulama_suresi_saat} sa
+                      </td>
                       <td className="py-3 px-2 text-right font-medium">
                         ₺ {slip.ucret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                       </td>
                       <td className="py-3 px-2 text-center">
-                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${
-                          slip.odeme_durumu === 'Ödendi' 
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                            : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                        }`}>
+                        <span
+                          className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${
+                            slip.odeme_durumu === 'Ödendi'
+                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                          }`}
+                        >
                           {slip.odeme_durumu}
                         </span>
                       </td>

@@ -1,5 +1,20 @@
 import React, { useState, useEffect } from 'react'
-import { Save, Image, Moon, Sun, Building, Trash2, CheckCircle2, Mail, Lock, Server, Play, X, Download, Upload } from 'lucide-react'
+import {
+  Save,
+  Image,
+  Moon,
+  Sun,
+  Building,
+  Trash2,
+  CheckCircle2,
+  Mail,
+  Lock,
+  Server,
+  Play,
+  X,
+  Download,
+  Upload
+} from 'lucide-react'
 
 interface AyarlarProps {
   onSettingsSaved: (settings: { name: string; logo: string | null; theme: string }) => void
@@ -31,12 +46,12 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
   const loadSettings = async (): Promise<void> => {
     try {
       const dbSettings = await window.api.dbQuery('SELECT * FROM ayarlar')
-      
+
       let dbName = ''
       let dbLogo: string | null = null
       let dbTheme = localStorage.getItem('tema') || 'dark'
       let dbFisGirisYontemi: 'liste' | 'hizli' = 'liste'
-      
+
       let host = ''
       let port = '587'
       let user = ''
@@ -50,7 +65,8 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
         if (setting.anahtar === 'kurum_adi') dbName = setting.deger
         if (setting.anahtar === 'kurum_logo') dbLogo = setting.deger
         if (setting.anahtar === 'tema') dbTheme = setting.deger
-        if (setting.anahtar === 'fis_giris_yontemi') dbFisGirisYontemi = setting.deger as 'liste' | 'hizli'
+        if (setting.anahtar === 'fis_giris_yontemi')
+          dbFisGirisYontemi = setting.deger as 'liste' | 'hizli'
         if (setting.anahtar === 'su_kanallari' && setting.deger) {
           try {
             dbChannels = JSON.parse(setting.deger)
@@ -58,7 +74,7 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
             dbChannels = setting.deger.split(',').filter(Boolean)
           }
         }
-        
+
         if (setting.anahtar === 'smtp_host') host = setting.deger
         if (setting.anahtar === 'smtp_port') port = setting.deger
         if (setting.anahtar === 'smtp_user') user = setting.deger
@@ -125,7 +141,7 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
 
   const handleThemeToggle = (newTheme: 'dark' | 'light'): void => {
     setTheme(newTheme)
-    
+
     if (newTheme === 'light') {
       document.documentElement.classList.add('light')
     } else {
@@ -141,19 +157,51 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
     setTestResult(null)
 
     try {
-      await window.api.dbRun("INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('kurum_adi', ?)", [name.trim()])
-      await window.api.dbRun("INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('kurum_logo', ?)", [logo || ''])
-      await window.api.dbRun("INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('tema', ?)", [theme])
-      await window.api.dbRun("INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('fis_giris_yontemi', ?)", [fisGirisYontemi])
-      await window.api.dbRun("INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('su_kanallari', ?)", [JSON.stringify(suKanallari)])
+      await window.api.dbRun(
+        "INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('kurum_adi', ?)",
+        [name.trim()]
+      )
+      await window.api.dbRun(
+        "INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('kurum_logo', ?)",
+        [logo || '']
+      )
+      await window.api.dbRun("INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('tema', ?)", [
+        theme
+      ])
+      await window.api.dbRun(
+        "INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('fis_giris_yontemi', ?)",
+        [fisGirisYontemi]
+      )
+      await window.api.dbRun(
+        "INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('su_kanallari', ?)",
+        [JSON.stringify(suKanallari)]
+      )
 
       // SMTP
-      await window.api.dbRun("INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('smtp_host', ?)", [smtpHost.trim()])
-      await window.api.dbRun("INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('smtp_port', ?)", [smtpPort.trim()])
-      await window.api.dbRun("INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('smtp_user', ?)", [smtpUser.trim()])
-      await window.api.dbRun("INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('smtp_pass', ?)", [smtpPass.trim()])
-      await window.api.dbRun("INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('smtp_to', ?)", [smtpTo.trim()])
-      await window.api.dbRun("INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('smtp_enabled', ?)", [smtpEnabled.toString()])
+      await window.api.dbRun(
+        "INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('smtp_host', ?)",
+        [smtpHost.trim()]
+      )
+      await window.api.dbRun(
+        "INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('smtp_port', ?)",
+        [smtpPort.trim()]
+      )
+      await window.api.dbRun(
+        "INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('smtp_user', ?)",
+        [smtpUser.trim()]
+      )
+      await window.api.dbRun(
+        "INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('smtp_pass', ?)",
+        [smtpPass.trim()]
+      )
+      await window.api.dbRun(
+        "INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('smtp_to', ?)",
+        [smtpTo.trim()]
+      )
+      await window.api.dbRun(
+        "INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('smtp_enabled', ?)",
+        [smtpEnabled.toString()]
+      )
 
       onSettingsSaved({
         name: name.trim() || 'Arazi Kanal Suyu Takip Programı',
@@ -178,16 +226,37 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
 
     try {
       // First save current inputs to database so main process reads the newest values
-      await window.api.dbRun("INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('smtp_host', ?)", [smtpHost.trim()])
-      await window.api.dbRun("INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('smtp_port', ?)", [smtpPort.trim()])
-      await window.api.dbRun("INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('smtp_user', ?)", [smtpUser.trim()])
-      await window.api.dbRun("INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('smtp_pass', ?)", [smtpPass.trim()])
-      await window.api.dbRun("INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('smtp_to', ?)", [smtpTo.trim()])
-      await window.api.dbRun("INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('smtp_enabled', ?)", [smtpEnabled.toString()])
+      await window.api.dbRun(
+        "INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('smtp_host', ?)",
+        [smtpHost.trim()]
+      )
+      await window.api.dbRun(
+        "INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('smtp_port', ?)",
+        [smtpPort.trim()]
+      )
+      await window.api.dbRun(
+        "INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('smtp_user', ?)",
+        [smtpUser.trim()]
+      )
+      await window.api.dbRun(
+        "INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('smtp_pass', ?)",
+        [smtpPass.trim()]
+      )
+      await window.api.dbRun(
+        "INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('smtp_to', ?)",
+        [smtpTo.trim()]
+      )
+      await window.api.dbRun(
+        "INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('smtp_enabled', ?)",
+        [smtpEnabled.toString()]
+      )
 
       const res = await window.api.sendBackup()
       if (res.success) {
-        setTestResult({ success: true, msg: 'Yedek e-postası başarıyla gönderildi! Lütfen alıcı posta kutusunu kontrol edin.' })
+        setTestResult({
+          success: true,
+          msg: 'Yedek e-postası başarıyla gönderildi! Lütfen alıcı posta kutusunu kontrol edin.'
+        })
       } else {
         setTestResult({ success: false, msg: 'Hata: ' + (res.error || 'Bilinmeyen SMTP hatası') })
       }
@@ -201,12 +270,12 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
 
   const handleExportSmtpTemplate = () => {
     const template = {
-      smtp_host: "[SMTP_ADDRESS]",
-      smtp_port: "[PORT]",
-      smtp_user: "[EMAIL_ADDRESS]",
-      smtp_pass: "[PASSWORD]",
-      smtp_secure: "[SECURE_CONNECTION_TYPE]",
-      backup_email: "[EMAIL_ADDRESS]"
+      smtp_host: '[SMTP_ADDRESS]',
+      smtp_port: '[PORT]',
+      smtp_user: '[EMAIL_ADDRESS]',
+      smtp_pass: '[PASSWORD]',
+      smtp_secure: '[SECURE_CONNECTION_TYPE]',
+      backup_email: '[EMAIL_ADDRESS]'
     }
     const blob = new Blob([JSON.stringify(template, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -231,12 +300,13 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
         if (data.smtp_port && data.smtp_port !== '[PORT]') setSmtpPort(data.smtp_port.toString())
         if (data.smtp_user && data.smtp_user !== '[EMAIL_ADDRESS]') setSmtpUser(data.smtp_user)
         if (data.smtp_pass && data.smtp_pass !== '[PASSWORD]') setSmtpPass(data.smtp_pass)
-        if (data.backup_email && data.backup_email !== '[EMAIL_ADDRESS]') setSmtpTo(data.backup_email)
-        
+        if (data.backup_email && data.backup_email !== '[EMAIL_ADDRESS]')
+          setSmtpTo(data.backup_email)
+
         if (data.smtp_host && data.smtp_host !== '[SMTP_ADDRESS]') {
           setSmtpEnabled(1)
         }
-        
+
         setSuccessMsg('SMTP şablonu başarıyla içe aktarıldı, kaydetmeyi unutmayın.')
         setTimeout(() => setSuccessMsg(''), 4000)
       } catch (err) {
@@ -252,12 +322,13 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-white">Ayarlar</h1>
-        <p className="text-slate-400 mt-1">Tema, kurum tanımları ve SMTP e-posta yedekleme parametreleri.</p>
+        <p className="text-slate-400 mt-1">
+          Tema, kurum tanımları ve SMTP e-posta yedekleme parametreleri.
+        </p>
       </div>
 
       <div className="glass-card p-6 rounded-2xl">
         <form onSubmit={handleSave} className="space-y-6 text-sm">
-          
           {successMsg && (
             <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center space-x-2 text-emerald-400">
               <CheckCircle2 className="h-5 w-5 shrink-0" />
@@ -267,9 +338,11 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
 
           {/* Theme Settings */}
           <div className="space-y-3 pb-6 border-b border-slate-800/80">
-            <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Arayüz Teması</h3>
+            <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+              Arayüz Teması
+            </h3>
             <p className="text-xs text-slate-500">Uygulamanın renk şemasını değiştirin.</p>
-            
+
             <div className="flex space-x-3">
               <button
                 type="button"
@@ -301,9 +374,13 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
 
           {/* Fiş Giriş Yöntemi */}
           <div className="space-y-3 pb-6 border-b border-slate-800/80">
-            <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Fiş Giriş Yöntemi</h3>
-            <p className="text-xs text-slate-500">Sulamalar ekranında kayıt yaparken mülk/kişi seçiminin nasıl yapılacağını belirleyin.</p>
-            
+            <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+              Fiş Giriş Yöntemi
+            </h3>
+            <p className="text-xs text-slate-500">
+              Sulamalar ekranında kayıt yaparken mülk/kişi seçiminin nasıl yapılacağını belirleyin.
+            </p>
+
             <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
               <button
                 type="button"
@@ -333,8 +410,12 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
 
           {/* Institution Name */}
           <div className="space-y-2 pb-6 border-b border-slate-800/80">
-            <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">Kurum / Kooperatif Adı</label>
-            <p className="text-xs text-slate-500 mb-2">Arayüz başlıklarında ve yazdırılan fişlerde görüntülenecek kurum ismi.</p>
+            <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">
+              Kurum / Kooperatif Adı
+            </label>
+            <p className="text-xs text-slate-500 mb-2">
+              Arayüz başlıklarında ve yazdırılan fişlerde görüntülenecek kurum ismi.
+            </p>
             <div className="relative">
               <Building className="absolute left-3 top-3 h-4.5 w-4.5 text-slate-500" />
               <input
@@ -349,8 +430,12 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
 
           {/* Institution Logo */}
           <div className="space-y-3 pb-6 border-b border-slate-800/80">
-            <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">Kurum Logosu (Görsel)</label>
-            <p className="text-xs text-slate-500">Uygulama açılışında ve sol menüde görüntülenecek logo (Maks: 1MB).</p>
+            <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">
+              Kurum Logosu (Görsel)
+            </label>
+            <p className="text-xs text-slate-500">
+              Uygulama açılışında ve sol menüde görüntülenecek logo (Maks: 1MB).
+            </p>
 
             <div className="flex items-center space-x-6 bg-slate-900/20 p-4 border border-white/5 rounded-2xl">
               <div className="h-20 w-20 bg-slate-950/60 border border-white/10 rounded-xl flex items-center justify-center overflow-hidden shrink-0">
@@ -389,13 +474,21 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
 
           {/* Su Kanalları Listesi */}
           <div className="space-y-3 pb-6 border-b border-slate-800/80">
-            <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">Su Kanalları / Su Kaynakları</label>
-            <p className="text-xs text-slate-500">Sistemde kullanılacak su kanallarını tanımlayın. Taşınmaz arazileri kaydederken buradan seçilecektir.</p>
-            
+            <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">
+              Su Kanalları / Su Kaynakları
+            </label>
+            <p className="text-xs text-slate-500">
+              Sistemde kullanılacak su kanallarını tanımlayın. Taşınmaz arazileri kaydederken
+              buradan seçilecektir.
+            </p>
+
             {/* List of channels */}
             <div className="flex flex-wrap gap-2 py-1">
               {suKanallari.map((chan, idx) => (
-                <div key={idx} className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900/60 border border-white/5 rounded-xl text-xs text-slate-205">
+                <div
+                  key={idx}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900/60 border border-white/5 rounded-xl text-xs text-slate-205"
+                >
                   <span>{chan}</span>
                   <button
                     type="button"
@@ -438,16 +531,20 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">E-posta ile Otomatik Yedekleme</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Dosya kapatılırken veritabanı yedeğini SMTP ile e-posta adresinize gönderin.</p>
+                <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+                  E-posta ile Otomatik Yedekleme
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Dosya kapatılırken veritabanı yedeğini SMTP ile e-posta adresinize gönderin.
+                </p>
               </div>
-              
+
               <div className="flex space-x-2">
                 <button
                   type="button"
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer ${
-                    smtpEnabled === 1 
-                      ? 'bg-indigo-505/15 bg-indigo-600 border-indigo-500 text-white shadow' 
+                    smtpEnabled === 1
+                      ? 'bg-indigo-505/15 bg-indigo-600 border-indigo-500 text-white shadow'
                       : 'bg-slate-800 text-slate-400 border-transparent hover:bg-slate-700'
                   }`}
                   onClick={() => setSmtpEnabled(1)}
@@ -457,8 +554,8 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
                 <button
                   type="button"
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer ${
-                    smtpEnabled === 0 
-                      ? 'bg-rose-500/15 text-rose-450 bg-rose-600 border-rose-500 text-white shadow' 
+                    smtpEnabled === 0
+                      ? 'bg-rose-500/15 text-rose-450 bg-rose-600 border-rose-500 text-white shadow'
                       : 'bg-slate-800 text-slate-400 border-transparent hover:bg-slate-700'
                   }`}
                   onClick={() => setSmtpEnabled(0)}
@@ -470,13 +567,14 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
 
             {smtpEnabled === 1 && (
               <div className="bg-slate-900/30 border border-white/5 rounded-2xl p-5 space-y-4 animate-fadeIn">
-                
                 {testResult && (
-                  <div className={`p-3 border rounded-xl text-xs ${
-                    testResult.success 
-                      ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
-                      : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-                  }`}>
+                  <div
+                    className={`p-3 border rounded-xl text-xs ${
+                      testResult.success
+                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                        : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                    }`}
+                  >
                     {testResult.msg}
                   </div>
                 )}
@@ -484,7 +582,9 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* SMTP Server */}
                   <div className="space-y-1 md:col-span-2">
-                    <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">SMTP Sunucu Adresi</label>
+                    <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">
+                      SMTP Sunucu Adresi
+                    </label>
                     <div className="relative">
                       <Server className="absolute left-3 top-3.5 h-4 w-4 text-slate-500" />
                       <input
@@ -500,7 +600,9 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
 
                   {/* SMTP Port */}
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">SMTP Port</label>
+                    <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">
+                      SMTP Port
+                    </label>
                     <input
                       type="number"
                       placeholder="Örn: 587 veya 465"
@@ -515,7 +617,9 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* SMTP User */}
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">Kullanıcı Adı (E-posta)</label>
+                    <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">
+                      Kullanıcı Adı (E-posta)
+                    </label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3.5 h-4 w-4 text-slate-500" />
                       <input
@@ -531,7 +635,9 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
 
                   {/* SMTP Password */}
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">E-posta Şifresi (veya Uygulama Şifresi)</label>
+                    <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">
+                      E-posta Şifresi (veya Uygulama Şifresi)
+                    </label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3.5 h-4 w-4 text-slate-500" />
                       <input
@@ -548,7 +654,9 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
 
                 {/* Recipient Email */}
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">Yedeğin Gönderileceği Alıcı E-posta</label>
+                  <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">
+                    Yedeğin Gönderileceği Alıcı E-posta
+                  </label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3.5 h-4 w-4 text-slate-500" />
                     <input
@@ -600,7 +708,6 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
                     />
                   </label>
                 </div>
-
               </div>
             )}
           </div>
@@ -616,7 +723,6 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
               <span>{saving ? 'Kaydediliyor...' : 'Ayarları Kaydet'}</span>
             </button>
           </div>
-
         </form>
       </div>
     </div>

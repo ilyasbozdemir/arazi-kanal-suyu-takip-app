@@ -15,13 +15,15 @@ export interface AppApi {
   dbQuery: (sql: string, params?: any[]) => Promise<any[]>
   dbRun: (sql: string, params?: any[]) => Promise<{ lastInsertRowid: number; changes: number }>
   createNewFile: () => Promise<{ success: boolean; filePath?: string; error?: string }>
-  openFile: (pathToCheck?: string) => Promise<{ success: boolean; filePath?: string; error?: string }>
+  openFile: (
+    pathToCheck?: string
+  ) => Promise<{ success: boolean; filePath?: string; error?: string }>
   saveFile: () => Promise<{ success: boolean; error?: string }>
   closeFile: () => Promise<{ success: boolean }>
   getRecentFiles: () => Promise<RecentFile[]>
   removeRecentFile: (filePath: string) => Promise<void>
   onFileStatus: (callback: (status: FileStatus) => void) => () => void
-  
+
   // Auto-updater functions
   checkUpdates: () => Promise<any>
   restartAndInstall: () => Promise<void>

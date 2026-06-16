@@ -74,24 +74,24 @@ export default function Startup({ onFileLoaded }: StartupProps): React.JSX.Eleme
 
   return (
     <div className="flex-1 flex flex-col justify-center items-center p-6 bg-[var(--background)] overflow-y-auto">
-      
       {/* Brand Logo & Name */}
       <div className="text-center space-y-3 mb-10">
         <div className="inline-flex p-4 bg-gradient-to-br from-indigo-500 to-cyan-500 rounded-3xl shadow-xl shadow-indigo-500/10 text-white animate-pulse">
           <Droplets className="h-10 w-10" />
         </div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-white">Arazi Kanal Suyu Takibi</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight text-white">
+          Arazi Kanal Suyu Takibi
+        </h1>
         <p className="text-slate-400 text-sm max-w-sm mx-auto">
-          Arazi sahiplerini, görevlileri ve sulama fişlerini tek bir dosyada güvenle saklayın ve yönetin.
+          Arazi sahiplerini, görevlileri ve sulama fişlerini tek bir dosyada güvenle saklayın ve
+          yönetin.
         </p>
       </div>
 
       {/* Main Panel Box */}
       <div className="w-full max-w-3xl grid grid-cols-1 md:grid-cols-2 gap-6">
-        
         {/* Left Side: Actions */}
         <div className="space-y-4 flex flex-col justify-center">
-          
           {error && (
             <div className="p-4 bg-rose-500/15 border border-rose-500/20 rounded-2xl flex items-start space-x-2 text-rose-400 text-xs">
               <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
@@ -109,7 +109,9 @@ export default function Startup({ onFileLoaded }: StartupProps): React.JSX.Eleme
               <FilePlus className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white group-hover:text-indigo-300 transition">Yeni Dosya Oluştur</h3>
+              <h3 className="text-base font-bold text-white group-hover:text-indigo-300 transition">
+                Yeni Dosya Oluştur
+              </h3>
               <p className="text-xs text-slate-400 mt-1">
                 Kanal suyu takibi için sıfırdan yeni bir `.asut` veritabanı dosyası oluşturun.
               </p>
@@ -126,7 +128,9 @@ export default function Startup({ onFileLoaded }: StartupProps): React.JSX.Eleme
               <FolderOpen className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white group-hover:text-cyan-300 transition">Mevcut Dosya Aç</h3>
+              <h3 className="text-base font-bold text-white group-hover:text-cyan-300 transition">
+                Mevcut Dosya Aç
+              </h3>
               <p className="text-xs text-slate-400 mt-1">
                 Daha önce oluşturulmuş bir `.asut` takip dosyasını bilgisayarınızdan seçin.
               </p>
@@ -138,7 +142,9 @@ export default function Startup({ onFileLoaded }: StartupProps): React.JSX.Eleme
         <div className="glass-card p-6 rounded-2xl flex flex-col min-h-[300px]">
           <div className="flex items-center space-x-2 border-b border-slate-800 pb-3 mb-4">
             <History className="h-4.5 w-4.5 text-slate-400" />
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider">Son Açılan Dosyalar</h3>
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+              Son Açılan Dosyalar
+            </h3>
           </div>
 
           <div className="flex-1 overflow-y-auto space-y-2 max-h-[260px] pr-1">
@@ -161,7 +167,7 @@ export default function Startup({ onFileLoaded }: StartupProps): React.JSX.Eleme
                       {file.path}
                     </span>
                   </div>
-                  
+
                   <div className="flex items-center space-x-2 shrink-0">
                     <span className="text-[9px] text-slate-500 whitespace-nowrap">
                       {new Date(file.openedAt).toLocaleDateString('tr-TR')}
@@ -179,14 +185,12 @@ export default function Startup({ onFileLoaded }: StartupProps): React.JSX.Eleme
             )}
           </div>
         </div>
-
       </div>
 
       {/* Footer info */}
       <div className="text-[10px] text-slate-600 mt-12 border-t border-slate-800/40 pt-4 w-full text-center">
         Arazi ve Kanal Suyu Takip Sistemi v1.0.0
       </div>
-
     </div>
   )
 }
