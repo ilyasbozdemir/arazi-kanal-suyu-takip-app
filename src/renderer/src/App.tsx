@@ -586,6 +586,28 @@ export default function App(): React.JSX.Element {
           className="flex items-center space-x-3"
           style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
         >
+          {/* UPDATE STATUS BADGES */}
+          {updateDownloaded && (
+            <button
+              onClick={handleRestartAndInstall}
+              className="flex items-center space-x-1 px-2 py-0.5 rounded bg-emerald-650 hover:bg-emerald-550 text-white font-bold text-[10px] animate-pulse cursor-pointer transition shrink-0"
+              title="Yeni sürüm hazır! Şimdi yüklemek için tıklayın."
+            >
+              <Sparkles className="h-3 w-3 text-yellow-350" />
+              <span>Yeniden Başlat</span>
+            </button>
+          )}
+
+          {updateAvailable && !updateDownloaded && (
+            <div
+              className="flex items-center space-x-1 px-2 py-0.5 rounded bg-amber-600/20 text-amber-400 font-semibold text-[10px] select-none shrink-0"
+              title="Yeni güncelleme indiriliyor..."
+            >
+              <RefreshCw className="h-3 w-3 animate-spin text-amber-400" />
+              <span>İndiriliyor...</span>
+            </div>
+          )}
+
           {/* THEME SWITCHER */}
           <button
             onClick={toggleTheme}
