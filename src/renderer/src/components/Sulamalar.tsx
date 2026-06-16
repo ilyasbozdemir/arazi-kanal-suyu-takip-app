@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { Search, Edit2, Trash2, Clock, Coins, Save, X, Printer, AlertCircle, Grid, FormInput, Plus } from 'lucide-react'
+import { Search, Edit2, Trash2, Clock, Coins, Save, X, Printer, AlertCircle, Grid, FormInput, Plus, CheckCircle2 } from 'lucide-react'
 
 interface Sulama {
   id: number
@@ -57,6 +57,10 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
 
   // Form State (Standard Mode)
   const [tasinmazId, setTasinmazId] = useState('')
+  const [fisGirisYontemi, setFisGirisYontemi] = useState<'liste' | 'hizli'>('liste')
+  const [fisNoGiris, setFisNoGiris] = useState('')
+  const [bulunanTasinmazSahibi, setBulunanTasinmazSahibi] = useState<string | null>(null)
+  
   const [gorevliId, setGorevliId] = useState('')
   const [sulamaTarihi, setSulamaTarihi] = useState(new Date().toISOString().split('T')[0])
   const [sulamaSuresiSaat, setSulamaSuresiSaat] = useState('')
@@ -99,6 +103,12 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
       // Load properties for dropdown
       const props = await window.api.dbQuery('SELECT * FROM tasinmazlar ORDER BY tapu_sahibi ASC')
       setTasinmazlar(props)
+
+      // Load fis_giris_yontemi from settings
+      const ayarlarRes = await window.api.dbQuery("SELECT deger FROM ayarlar WHERE anahtar = 'fis_giris_yontemi'")
+      if (ayarlarRes && ayarlarRes.length > 0) {
+        setFisGirisYontemi(ayarlarRes[0].deger as 'liste' | 'hizli')
+      }
 
       // Load active officers for dropdown
       const officers = await window.api.dbQuery('SELECT * FROM gorevliler WHERE aktif = 1 ORDER BY ad_soyad ASC')
@@ -327,6 +337,17 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
     onViewModeChange('standard') // Switch to standard view to edit in form
     setEditingId(s.id)
     setTasinmazId(s.tasinmaz_id.toString())
+    
+    // Auto-fill fisNoGiris if in hizli mode
+    const t = tasinmazlar.find(x => x.id === s.tasinmaz_id)
+    if (t && t.ada && t.parsel) {
+      setFisNoGiris(`${t.ada}-${t.parsel}`)
+      setBulunanTasinmazSahibi(`${t.tapu_sahibi} (${t.mahalle_koy})`)
+    } else {
+      setFisNoGiris('')
+      setBulunanTasinmazSahibi(null)
+    }
+
     setGorevliId(s.gorevli_id.toString())
     setSulamaTarihi(s.sulama_tarihi)
     setSulamaSuresiSaat(s.sulama_suresi_saat.toString())
@@ -354,6 +375,8 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
   const resetForm = (): void => {
     setEditingId(null)
     setTasinmazId('')
+    setFisNoGiris('')
+    setBulunanTasinmazSahibi(null)
     setGorevliId(gorevliler.length > 0 ? gorevliler[0].id.toString() : '')
     setSulamaTarihi(new Date().toISOString().split('T')[0])
     setSulamaSuresiSaat('')
@@ -366,6 +389,29 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
 
   const handlePrint = (): void => {
     window.print()
+  }
+
+  const handleFisNoChange = (val: string) => {
+    setFisNoGiris(val)
+    // format is expected to be "Ada-Parsel" or "Ada/Parsel" or "Ada Parsel"
+    const parts = val.replace(/[\/\\]/g, '-').replace(/\s+/g, '-').split('-').map(s => s.trim())
+    
+    if (parts.length >= 2 && parts[0] && parts[1]) {
+      const ada = parts[0]
+      const parsel = parts[1]
+      
+      const match = tasinmazlar.find(t => t.ada === ada && t.parsel === parsel)
+      if (match) {
+        setTasinmazId(match.id.toString())
+        setBulunanTasinmazSahibi(`${match.tapu_sahibi} (${match.mahalle_koy})`)
+      } else {
+        setTasinmazId('')
+        setBulunanTasinmazSahibi(null)
+      }
+    } else {
+      setTasinmazId('')
+      setBulunanTasinmazSahibi(null)
+    }
   }
 
   // Search and Filter Slips
@@ -639,23 +685,52 @@ export default function Sulamalar({ viewMode, onViewModeChange }: SulamalarProps
                 </div>
               )}
 
-              {/* Select Tasinmaz */}
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider">Taşınmaz (Arazi Sahibi) *</label>
-                <select
-                  className="w-full px-3 py-2.5 rounded-xl glass-input text-xs"
-                  value={tasinmazId}
-                  onChange={(e) => setTasinmazId(e.target.value)}
-                  required
-                >
-                  <option className="bg-slate-950 text-slate-400" value="">-- Mülk Seçin --</option>
-                  {tasinmazlar.map((t) => (
-                    <option key={t.id} className="bg-slate-950 text-slate-200" value={t.id}>
-                      {t.tapu_sahibi} - {t.mahalle_koy} (Ada {t.ada || '-'} Parsel {t.parsel || '-'})
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Select Tasinmaz or Fast Entry */}
+              {fisGirisYontemi === 'liste' ? (
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider">Taşınmaz (Arazi Sahibi) *</label>
+                  <select
+                    className="w-full px-3 py-2.5 rounded-xl glass-input text-xs"
+                    value={tasinmazId}
+                    onChange={(e) => setTasinmazId(e.target.value)}
+                    required
+                  >
+                    <option className="bg-slate-950 text-slate-400" value="">-- Mülk Seçin --</option>
+                    {tasinmazlar.map((t) => (
+                      <option key={t.id} className="bg-slate-950 text-slate-200" value={t.id}>
+                        {t.tapu_sahibi} - {t.mahalle_koy} (Ada {t.ada || '-'} Parsel {t.parsel || '-'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider">Ada-Parsel Fiş Numarası *</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2.5 rounded-xl glass-input text-xs font-mono font-bold tracking-wider"
+                      placeholder="Örn: 202-5"
+                      value={fisNoGiris}
+                      onChange={(e) => handleFisNoChange(e.target.value)}
+                      required
+                    />
+                  </div>
+                  {bulunanTasinmazSahibi ? (
+                    <div className="text-xs text-emerald-400 mt-1.5 flex items-center gap-1 font-semibold animate-fadeIn">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Bulundu: {bulunanTasinmazSahibi}
+                    </div>
+                  ) : fisNoGiris.length >= 3 ? (
+                    <div className="text-xs text-rose-400 mt-1.5 flex items-center gap-1 font-medium animate-fadeIn">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      Eşleşen taşınmaz bulunamadı!
+                    </div>
+                  ) : (
+                    <div className="text-[10px] text-slate-500 mt-1">Araya tire koyarak yazın (Örn: Ada-Parsel)</div>
+                  )}
+                </div>
+              )}
 
               {/* Select Gorevli */}
               <div className="space-y-1">

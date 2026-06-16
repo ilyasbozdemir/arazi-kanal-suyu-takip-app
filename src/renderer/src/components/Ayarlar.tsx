@@ -9,6 +9,7 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
   const [name, setName] = useState('')
   const [logo, setLogo] = useState<string | null>(null)
   const [theme, setTheme] = useState('dark')
+  const [fisGirisYontemi, setFisGirisYontemi] = useState<'liste' | 'hizli'>('liste')
 
   // Channels list state
   const [suKanallari, setSuKanallari] = useState<string[]>(['Ana Kanal'])
@@ -34,6 +35,7 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
       let dbName = ''
       let dbLogo: string | null = null
       let dbTheme = localStorage.getItem('tema') || 'dark'
+      let dbFisGirisYontemi: 'liste' | 'hizli' = 'liste'
       
       let host = ''
       let port = '587'
@@ -48,6 +50,7 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
         if (setting.anahtar === 'kurum_adi') dbName = setting.deger
         if (setting.anahtar === 'kurum_logo') dbLogo = setting.deger
         if (setting.anahtar === 'tema') dbTheme = setting.deger
+        if (setting.anahtar === 'fis_giris_yontemi') dbFisGirisYontemi = setting.deger as 'liste' | 'hizli'
         if (setting.anahtar === 'su_kanallari' && setting.deger) {
           try {
             dbChannels = JSON.parse(setting.deger)
@@ -67,6 +70,7 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
       setName(dbName || 'Arazi Kanal Suyu Takip Programı')
       setLogo(dbLogo)
       setTheme(dbTheme)
+      setFisGirisYontemi(dbFisGirisYontemi)
       setSuKanallari(dbChannels)
 
       setSmtpHost(host)
@@ -140,6 +144,7 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
       await window.api.dbRun("INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('kurum_adi', ?)", [name.trim()])
       await window.api.dbRun("INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('kurum_logo', ?)", [logo || ''])
       await window.api.dbRun("INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('tema', ?)", [theme])
+      await window.api.dbRun("INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('fis_giris_yontemi', ?)", [fisGirisYontemi])
       await window.api.dbRun("INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('su_kanallari', ?)", [JSON.stringify(suKanallari)])
 
       // SMTP
@@ -242,6 +247,38 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
               >
                 <Sun className="h-4.5 w-4.5" />
                 <span>Açık Tema</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Fiş Giriş Yöntemi */}
+          <div className="space-y-3 pb-6 border-b border-slate-800/80">
+            <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Fiş Giriş Yöntemi</h3>
+            <p className="text-xs text-slate-500">Sulamalar ekranında kayıt yaparken mülk/kişi seçiminin nasıl yapılacağını belirleyin.</p>
+            
+            <div className="flex space-x-3">
+              <button
+                type="button"
+                onClick={() => setFisGirisYontemi('liste')}
+                className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl border font-semibold transition cursor-pointer ${
+                  fisGirisYontemi === 'liste'
+                    ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/15'
+                    : 'bg-slate-900/40 border-white/5 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <span>Açılır Listeden Seç</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFisGirisYontemi('hizli')}
+                className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl border font-semibold transition cursor-pointer ${
+                  fisGirisYontemi === 'hizli'
+                    ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/15'
+                    : 'bg-slate-900/40 border-white/5 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <span>Ada-Parsel (Hızlı Giriş)</span>
               </button>
             </div>
           </div>
