@@ -1,4 +1,6 @@
 import Database from 'better-sqlite3'
+import { initializeDatabase } from './database'
+import { runMigrations, CURRENT_SCHEMA_VERSION } from './database/migrate'
 
 let db: Database.Database | null = null
 
@@ -15,46 +17,31 @@ export function connectDatabase(dbPath: string): void {
   // Enable foreign keys
   db.pragma('foreign_keys = ON')
 
-  // Run migrations to create tables automatically
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS gorevliler (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      ad_soyad TEXT NOT NULL,
-      gorev TEXT,
-      telefon TEXT,
-      eposta TEXT,
-      aktif INTEGER DEFAULT 1
-    );
-
-    CREATE TABLE IF NOT EXISTS tasinmazlar (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      tapu_sahibi TEXT NOT NULL,
-      ada TEXT,
-      parsel TEXT,
-      alan_m2 REAL,
-      mahalle_koy TEXT,
-      kanal_adi TEXT,
-      aciklama TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS sulamalar (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      tasinmaz_id INTEGER NOT NULL,
-      gorevli_id INTEGER NOT NULL,
-      sulama_tarihi TEXT NOT NULL,
-      sulama_suresi_saat REAL NOT NULL,
-      ucret REAL NOT NULL,
-      odeme_durumu TEXT CHECK(odeme_durumu IN ('Ödendi', 'Ödenmedi')) DEFAULT 'Ödenmedi',
-      aciklama TEXT,
-      FOREIGN KEY (tasinmaz_id) REFERENCES tasinmazlar(id) ON DELETE CASCADE,
-      FOREIGN KEY (gorevli_id) REFERENCES gorevliler(id) ON DELETE RESTRICT
-    );
-
-    CREATE TABLE IF NOT EXISTS ayarlar (
-      anahtar TEXT PRIMARY KEY,
-      deger TEXT
-    );
-  `)
+  // Check if this is a new database by checking if 'ayarlar' table exists
+  const tableCheck = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='ayarlar'").get()
+  
+  if (!tableCheck) {
+    // New database: initialize schema from scratch
+    console.log('Yeni veritabanı oluşturuluyor...')
+    initializeDatabase(db, 'Arazi Kanal Suyu Takip Programı')
+  } else {
+    // Existing database: check version and run migrations
+    try {
+      const versionRow: any = db.prepare("SELECT deger FROM ayarlar WHERE anahtar='dbSchemaVersion'").get()
+      const currentVersion = versionRow ? parseInt(versionRow.deger, 10) : 0
+      
+      if (currentVersion < CURRENT_SCHEMA_VERSION) {
+        console.log(`Veritabanı güncelleniyor. Mevcut Sürüm: ${currentVersion}, Hedef Sürüm: ${CURRENT_SCHEMA_VERSION}`)
+        runMigrations(db, currentVersion)
+      } else {
+        console.log(`Veritabanı sürümü güncel (Sürüm: ${currentVersion})`)
+      }
+    } catch (e) {
+      console.error('Migration sırasında hata:', e)
+      // If ayarlar table is corrupt or old version format, try to run migrations from 0
+      runMigrations(db, 0)
+    }
+  }
 }
 
 export function closeDatabase(): void {

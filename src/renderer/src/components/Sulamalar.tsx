@@ -368,13 +368,6 @@ export default function Sulamalar({
     }
   }
 
-      await loadData()
-    } catch (e: any) {
-      console.error('Error inserting excel row:', e)
-      alert('Kayıt eklenemedi: ' + e.message)
-    }
-  }
-
   const handleEdit = (s: Sulama): void => {
     onViewModeChange('standard') // Switch to standard view to edit in form
     setEditingId(s.id)

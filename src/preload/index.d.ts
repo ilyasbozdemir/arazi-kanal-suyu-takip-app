@@ -36,6 +36,7 @@ export interface AppApi {
 
   getAppVersion: () => Promise<string>
   exitApp: () => Promise<void>
+  setTheme: (theme: 'light' | 'dark') => Promise<void>
 }
 
 declare global {
