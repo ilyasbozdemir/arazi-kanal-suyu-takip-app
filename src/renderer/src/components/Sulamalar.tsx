@@ -80,7 +80,7 @@ export default function Sulamalar({
   const [gorevliId, setGorevliId] = useState('')
   const [sulamaTarihi, setSulamaTarihi] = useState(new Date().toISOString().split('T')[0])
   const [sulamaSuresiSaat, setSulamaSuresiSaat] = useState('')
-  const [saatUcreti, setSaatUcreti] = useState('150')
+  const [saatUcreti, setSaatUcreti] = useState('100')
   const [suUcretleriList, setSuUcretleriList] = useState<string[]>(['150', '200', '250'])
   const [ucret, setUcret] = useState('')
   const [odemeDurumu, setOdemeDurumu] = useState('Ödenmedi')
