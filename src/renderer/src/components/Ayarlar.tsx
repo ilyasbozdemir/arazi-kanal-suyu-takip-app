@@ -24,7 +24,9 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
   const [name, setName] = useState('')
   const [logo, setLogo] = useState<string | null>(null)
   const [theme, setTheme] = useState('dark')
-  const [fisGirisYontemi, setFisGirisYontemi] = useState<'liste' | 'hizli'>('liste')
+  const [suUcretleriRaw, setSuUcretleriRaw] = useState('150, 200, 250')
+  const [suUcretleri, setSuUcretleri] = useState<string[]>(['150', '200', '250'])
+  const [varsayilanSaatUcreti, setVarsayilanSaatUcreti] = useState('150')
 
   // Channels list state
   const [suKanallari, setSuKanallari] = useState<string[]>(['Ana Kanal'])
@@ -50,7 +52,6 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
       let dbName = ''
       let dbLogo: string | null = null
       let dbTheme = localStorage.getItem('tema') || 'dark'
-      let dbFisGirisYontemi: 'liste' | 'hizli' = 'liste'
 
       let host = ''
       let port = '587'
@@ -60,19 +61,29 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
       let enabled = 0
 
       let dbChannels: string[] = ['Ana Kanal']
+      let dbSuUcretleri: string[] = ['150', '200', '250']
+      let dbVarsayilanSaatUcreti = '150'
 
       dbSettings.forEach((setting: any) => {
         if (setting.anahtar === 'kurum_adi') dbName = setting.deger
         if (setting.anahtar === 'kurum_logo') dbLogo = setting.deger
         if (setting.anahtar === 'tema') dbTheme = setting.deger
-        if (setting.anahtar === 'fis_giris_yontemi')
-          dbFisGirisYontemi = setting.deger as 'liste' | 'hizli'
         if (setting.anahtar === 'su_kanallari' && setting.deger) {
           try {
             dbChannels = JSON.parse(setting.deger)
           } catch (e) {
             dbChannels = setting.deger.split(',').filter(Boolean)
           }
+        }
+        if (setting.anahtar === 'su_ucretleri' && setting.deger) {
+          try {
+            dbSuUcretleri = JSON.parse(setting.deger)
+          } catch (e) {
+            dbSuUcretleri = setting.deger.split(',').filter(Boolean)
+          }
+        }
+        if (setting.anahtar === 'varsayilan_saat_ucreti' && setting.deger) {
+          dbVarsayilanSaatUcreti = setting.deger
         }
 
         if (setting.anahtar === 'smtp_host') host = setting.deger
@@ -86,8 +97,10 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
       setName(dbName || 'Arazi Kanal Suyu Takip Programı')
       setLogo(dbLogo)
       setTheme(dbTheme)
-      setFisGirisYontemi(dbFisGirisYontemi)
       setSuKanallari(dbChannels)
+      setSuUcretleri(dbSuUcretleri)
+      setSuUcretleriRaw(dbSuUcretleri.join(', '))
+      setVarsayilanSaatUcreti(dbVarsayilanSaatUcreti)
 
       setSmtpHost(host)
       setSmtpPort(port)
@@ -117,6 +130,15 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
 
   const handleRemoveLogo = (): void => {
     setLogo(null)
+  }
+
+  const handleSuUcretleriChange = (val: string) => {
+    setSuUcretleriRaw(val)
+    const list = val
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s !== '' && !isNaN(Number(s)))
+    setSuUcretleri(list.length > 0 ? list : ['150'])
   }
 
   const handleAddChannel = () => {
@@ -170,11 +192,19 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
       ])
       await window.api.dbRun(
         "INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('fis_giris_yontemi', ?)",
-        [fisGirisYontemi]
+        ['hizli'] // Force fast entry method as option 1 is disabled
       )
       await window.api.dbRun(
         "INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('su_kanallari', ?)",
         [JSON.stringify(suKanallari)]
+      )
+      await window.api.dbRun(
+        "INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('su_ucretleri', ?)",
+        [JSON.stringify(suUcretleri)]
+      )
+      await window.api.dbRun(
+        "INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('varsayilan_saat_ucreti', ?)",
+        [varsayilanSaatUcreti]
       )
 
       // SMTP
@@ -384,27 +414,68 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
             <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
               <button
                 type="button"
-                onClick={() => setFisGirisYontemi('liste')}
-                className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl border font-semibold transition cursor-pointer ${
-                  fisGirisYontemi === 'liste'
-                    ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/15'
-                    : 'bg-slate-900/40 border-white/5 text-slate-400 hover:text-slate-200'
-                }`}
+                disabled
+                className="flex items-center space-x-2 px-5 py-2.5 rounded-xl border border-white/5 font-semibold bg-slate-900/10 text-slate-500 opacity-50 cursor-not-allowed"
+                title="Bu yöntem devre dışı bırakılmıştır."
               >
-                <span>1 - Taşınmaza Göre (Açılır Liste)</span>
+                <span>1 - Taşınmaza Göre (Açılır Liste) [Pasif]</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => setFisGirisYontemi('hizli')}
-                className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl border font-semibold transition cursor-pointer ${
-                  fisGirisYontemi === 'hizli'
-                    ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/15'
-                    : 'bg-slate-900/40 border-white/5 text-slate-400 hover:text-slate-200'
-                }`}
+                className="flex items-center space-x-2 px-5 py-2.5 rounded-xl border border-indigo-500 font-semibold bg-indigo-600 text-white shadow-lg shadow-indigo-600/15 cursor-default"
               >
-                <span>2 - Su Bekçisinden Gelen Fişe Göre (Ada-Parsel Örn: 202-5)</span>
+                <span>2 - Su Bekçisinden Gelen Fişe Göre (Ada-Parsel Örn: 250-5) [Aktif]</span>
               </button>
+            </div>
+          </div>
+
+          {/* Tarife ve Su Ücreti Ayarları */}
+          <div className="space-y-4 pb-6 border-b border-slate-800/80">
+            <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+              Tarife ve Su Ücreti Ayarları
+            </h3>
+            <p className="text-xs text-slate-500">
+              Sulamalarda kullanılacak saatlik su ücretlerini tanımlayın ve varsayılan tarifeyi seçin.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider block">
+                  Saatlik Ücret Seçenekleri (₺)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Örn: 150, 200, 250"
+                  className="w-full px-3 py-2 rounded-xl glass-input text-xs font-semibold"
+                  value={suUcretleriRaw}
+                  onChange={(e) => handleSuUcretleriChange(e.target.value)}
+                />
+                <span className="text-[10px] text-slate-500">
+                  Birden fazla fiyatı araya virgül koyarak tanımlayın.
+                </span>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider block">
+                  Varsayılan Seçili Ücret
+                </label>
+                <select
+                  title="Varsayılan Saatlik Ücret"
+                  className="w-full px-3 py-2 rounded-xl glass-input text-xs text-slate-200 cursor-pointer"
+                  value={varsayilanSaatUcreti}
+                  onChange={(e) => setVarsayilanSaatUcreti(e.target.value)}
+                >
+                  {suUcretleri.map((ucret) => (
+                    <option key={ucret} className="bg-slate-950 text-slate-200" value={ucret}>
+                      ₺{ucret}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-[10px] text-slate-500">
+                  Yeni fiş açıldığında otomatik seçilecek olan tarife.
+                </span>
+              </div>
             </div>
           </div>
 
