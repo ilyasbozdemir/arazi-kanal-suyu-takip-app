@@ -42,7 +42,7 @@ interface Property {
 }
 
 // Reuse print layout function for individual slips
-const renderA5ReceiptContent = (s: any, logo: string | null, name: string) => {
+const renderA5ReceiptContent = (s: any, logo: string | null, name: string, birim: string) => {
   return (
     <div className="space-y-4 font-sans text-xs text-black leading-relaxed bg-white p-2">
       <div className="flex items-center justify-between border-b-2 border-black pb-3">
@@ -55,7 +55,7 @@ const renderA5ReceiptContent = (s: any, logo: string | null, name: string) => {
           <h1 className="text-xs font-extrabold tracking-wide uppercase text-black leading-tight">
             {name}
           </h1>
-          <p className="text-[9px] text-slate-500 font-sans mt-0.5">Tarımsal Sulama Hizmetleri</p>
+          <p className="text-[9px] text-slate-500 font-sans mt-0.5">{birim}</p>
           <p className="text-[9px] text-slate-500 font-sans font-medium">
             Fiş Tarihi: {new Date(s.sulama_tarihi).toLocaleDateString('tr-TR')}
           </p>
@@ -152,6 +152,7 @@ export default function KisiProfil({ ownerName }: KisiProfilProps): React.JSX.El
   const [slips, setSlips] = useState<Slip[]>([])
   const [properties, setProperties] = useState<Property[]>([])
   const [kurumAdi, setKurumAdi] = useState('Arazi Kanal Suyu Takip Programı')
+  const [kurumBirim, setKurumBirim] = useState('Tarımsal Sulama Hizmetleri')
   const [kurumLogo, setKurumLogo] = useState<string | null>(null)
 
   const [printingSlip, setPrintingSlip] = useState<Slip | null>(null)
@@ -199,6 +200,13 @@ export default function KisiProfil({ ownerName }: KisiProfilProps): React.JSX.El
       )
       if (logoSetting && logoSetting[0]?.deger) {
         setKurumLogo(logoSetting[0].deger)
+      }
+
+      const birimSetting = await window.api.dbQuery(
+        "SELECT deger FROM ayarlar WHERE anahtar = 'kurum_birim'"
+      )
+      if (birimSetting && birimSetting[0]?.deger) {
+        setKurumBirim(birimSetting[0].deger)
       }
     } catch (e) {
       console.error('Error loading profile data:', e)
@@ -491,7 +499,7 @@ export default function KisiProfil({ ownerName }: KisiProfilProps): React.JSX.El
               }
             }
           `}</style>
-          {renderA5ReceiptContent(printingSlip, kurumLogo, kurumAdi)}
+          {renderA5ReceiptContent(printingSlip, kurumLogo, kurumAdi, kurumBirim)}
         </div>
       )}
 

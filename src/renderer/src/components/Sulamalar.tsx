@@ -71,7 +71,7 @@ interface SulamalarProps {
   onViewModeChange: (mode: 'standard' | 'excel') => void
 }
 
-const renderReceiptContent = (s: Sulama, logo: string | null, name: string): React.JSX.Element => {
+const renderReceiptContent = (s: Sulama, logo: string | null, name: string, birim: string): React.JSX.Element => {
   return (
     <div className="space-y-4 font-sans text-xs text-black leading-relaxed bg-white p-2">
       {/* Header */}
@@ -85,7 +85,7 @@ const renderReceiptContent = (s: Sulama, logo: string | null, name: string): Rea
           <h1 className="text-xs font-extrabold tracking-wide uppercase text-black leading-tight">
             {name}
           </h1>
-          <p className="text-[9px] text-slate-500 font-sans mt-0.5">Tarımsal Sulama Hizmetleri</p>
+          <p className="text-[9px] text-slate-500 font-sans mt-0.5">{birim}</p>
           <p className="text-[9px] text-slate-500 font-sans font-medium">
             Fiş Tarihi: {new Date(s.sulama_tarihi).toLocaleDateString('tr-TR')}
           </p>
@@ -202,6 +202,7 @@ export default function Sulamalar({
 
   // Institution settings for printing
   const [kurumAdi, setKurumAdi] = useState('Arazi Kanal Suyu Takip Programı')
+  const [kurumBirim, setKurumBirim] = useState('Tarımsal Sulama Hizmetleri')
   const [kurumLogo, setKurumLogo] = useState<string | null>(null)
 
   // Form State (Standard Mode)
@@ -297,6 +298,16 @@ export default function Sulamalar({
         setKurumAdi(dbKurumAdi[0].deger)
       } else {
         setKurumAdi('Arazi Kanal Suyu Takip Programı')
+      }
+
+      // Load institution unit/branch for printing subheader
+      const dbKurumBirim = await window.api.dbQuery(
+        "SELECT deger FROM ayarlar WHERE anahtar = 'kurum_birim'"
+      )
+      if (dbKurumBirim && dbKurumBirim[0]?.deger) {
+        setKurumBirim(dbKurumBirim[0].deger)
+      } else {
+        setKurumBirim('Tarımsal Sulama Hizmetleri')
       }
 
       // Load institution logo for printing
@@ -1658,7 +1669,7 @@ export default function Sulamalar({
 
             {/* Ticket Content Screen Preview */}
             <div className="border border-slate-200 p-6 rounded-xl bg-slate-50/50">
-              {renderReceiptContent(showPrintModal, kurumLogo, kurumAdi)}
+              {renderReceiptContent(showPrintModal, kurumLogo, kurumAdi, kurumBirim)}
             </div>
 
             {/* Modal Actions */}
@@ -1684,7 +1695,7 @@ export default function Sulamalar({
       {/* Pure CSS/HTML container specifically designed for paper layout printing (A5 Portrait) */}
       {showPrintModal && (
         <div className="print-only hidden w-full bg-white text-black">
-          {renderReceiptContent(showPrintModal, kurumLogo, kurumAdi)}
+          {renderReceiptContent(showPrintModal, kurumLogo, kurumAdi, kurumBirim)}
         </div>
       )}
     </div>

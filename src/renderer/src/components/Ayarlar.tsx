@@ -22,6 +22,7 @@ interface AyarlarProps {
 
 export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.Element {
   const [name, setName] = useState('')
+  const [birim, setBirim] = useState('')
   const [logo, setLogo] = useState<string | null>(null)
   const [theme, setTheme] = useState('dark')
   const [suUcretleriRaw, setSuUcretleriRaw] = useState('150, 200, 250')
@@ -50,6 +51,7 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
       const dbSettings = await window.api.dbQuery('SELECT * FROM ayarlar')
 
       let dbName = ''
+      let dbBirim = ''
       let dbLogo: string | null = null
       let dbTheme = localStorage.getItem('tema') || 'dark'
 
@@ -66,6 +68,7 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
 
       dbSettings.forEach((setting: any) => {
         if (setting.anahtar === 'kurum_adi') dbName = setting.deger
+        if (setting.anahtar === 'kurum_birim') dbBirim = setting.deger
         if (setting.anahtar === 'kurum_logo') dbLogo = setting.deger
         if (setting.anahtar === 'tema') dbTheme = setting.deger
         if (setting.anahtar === 'su_kanallari' && setting.deger) {
@@ -95,6 +98,7 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
       })
 
       setName(dbName || 'Arazi Kanal Suyu Takip Programı')
+      setBirim(dbBirim || 'Tarımsal Sulama Hizmetleri')
       setLogo(dbLogo)
       setTheme(dbTheme)
       setSuKanallari(dbChannels)
@@ -182,6 +186,10 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
       await window.api.dbRun(
         "INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('kurum_adi', ?)",
         [name.trim()]
+      )
+      await window.api.dbRun(
+        "INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('kurum_birim', ?)",
+        [birim.trim() || 'Tarımsal Sulama Hizmetleri']
       )
       await window.api.dbRun(
         "INSERT OR REPLACE INTO ayarlar (anahtar, deger) VALUES ('kurum_logo', ?)",
@@ -479,22 +487,40 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
             </div>
           </div>
 
-          {/* Institution Name */}
-          <div className="space-y-2 pb-6 border-b border-slate-800/80">
-            <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">
-              Kurum / Kooperatif Adı
-            </label>
-            <p className="text-xs text-slate-500 mb-2">
-              Arayüz başlıklarında ve yazdırılan fişlerde görüntülenecek kurum ismi.
-            </p>
-            <div className="relative">
-              <Building className="absolute left-3 top-3 h-4.5 w-4.5 text-slate-500" />
+          {/* Institution Name & Birim */}
+          <div className="space-y-4 pb-6 border-b border-slate-800/80">
+            <div>
+              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block mb-1">
+                Kurum / Kooperatif Adı
+              </label>
+              <p className="text-xs text-slate-500 mb-2">
+                Arayüz başlıklarında ve yazdırılan fişlerde görüntülenecek kurum ismi.
+              </p>
+              <div className="relative">
+                <Building className="absolute left-3 top-3 h-4.5 w-4.5 text-slate-500" />
+                <input
+                  type="text"
+                  placeholder="Örn: Akçaören Tarımsal Sulama Birliği"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl glass-input font-medium"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block mb-1">
+                Kurum Alt Başlığı / Birim Adı
+              </label>
+              <p className="text-xs text-slate-500 mb-2">
+                Fişlerde kurum adının altında görünecek birim/departman tanımı (örn: Tarımsal Sulama Hizmetleri).
+              </p>
               <input
                 type="text"
-                placeholder="Örn: Akçaören Tarımsal Sulama Birliği"
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl glass-input font-medium"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                placeholder="Örn: Tarımsal Sulama Hizmetleri"
+                className="w-full px-4 py-2.5 rounded-xl glass-input font-medium"
+                value={birim}
+                onChange={(e) => setBirim(e.target.value)}
               />
             </div>
           </div>

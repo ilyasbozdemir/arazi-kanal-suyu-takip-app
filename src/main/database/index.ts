@@ -9,6 +9,10 @@ import { CURRENT_SCHEMA_VERSION } from './migrate'
 export const schema = {
   database: 'ARAZI_KANAL_SUYU_DB',
   app_title: 'Arazi Kanal Suyu Takip',
+  file_extension_info: {
+    file_extension:'.asut',
+    file_description:'Arazi Kanal Suyu Takip Dosyası'
+  },
   developer: {
     name: 'İlyas BOZDEMİR',
     web: 'https://ilyasbozdemir.dev',
@@ -33,6 +37,7 @@ export function initializeDatabase(db: Database.Database, institutionName: strin
       deger TEXT
     );
     INSERT OR IGNORE INTO ayarlar (anahtar, deger) VALUES ('kurum_adi', '${institutionName.replace(/'/g, "''")}');
+    INSERT OR IGNORE INTO ayarlar (anahtar, deger) VALUES ('kurum_birim', 'Tarımsal Sulama Hizmetleri');
     INSERT OR IGNORE INTO ayarlar (anahtar, deger) VALUES ('dbVersion', '${currentAppVersion}');
     INSERT OR IGNORE INTO ayarlar (anahtar, deger) VALUES ('dbSchemaVersion', '${CURRENT_SCHEMA_VERSION}');
   `)
