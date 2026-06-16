@@ -34,6 +34,7 @@ export default function Tasinmazlar(): React.JSX.Element {
   const [pageSizeLimit, setPageSizeLimit] = useState<number>(0) // 0 = Hepsi
 
   const [editingId, setEditingId] = useState<number | null>(null)
+  const [showFormPanel, setShowFormPanel] = useState(false)
 
   // Form State
   const [tapuSahibi, setTapuSahibi] = useState('')
@@ -238,6 +239,7 @@ export default function Tasinmazlar(): React.JSX.Element {
     setKanalAdi(tasinmaz.kanal_adi || '')
     setAciklama(tasinmaz.aciklama || '')
     setError('')
+    setShowFormPanel(true)
   }
 
   const handleDelete = async (id: number, owner: string): Promise<void> => {
@@ -266,6 +268,7 @@ export default function Tasinmazlar(): React.JSX.Element {
     setKanalAdi(definedChannels.length > 0 ? definedChannels[0] : '')
     setAciklama('')
     setError('')
+    setShowFormPanel(false)
   }
 
   // Filter and Search logic
@@ -307,29 +310,44 @@ export default function Tasinmazlar(): React.JSX.Element {
         </div>
         
         {/* View Switcher */}
-        <div className="flex items-center space-x-1 bg-slate-900/50 p-1 rounded-xl border border-white/5 shadow-inner">
-          <button
-            onClick={() => setViewMode('standard')}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-              viewMode === 'standard'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <FormInput className="w-3.5 h-3.5" />
-            <span>Klasik Form</span>
-          </button>
-          <button
-            onClick={() => setViewMode('excel')}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-              viewMode === 'excel'
-                ? 'bg-emerald-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <Grid className="w-3.5 h-3.5" />
-            <span>Excel Tablo</span>
-          </button>
+        <div className="flex items-center gap-2">
+          {viewMode === 'standard' && (
+            <button
+              onClick={() => setShowFormPanel((prev) => !prev)}
+              className={`flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold transition border cursor-pointer ${
+                showFormPanel
+                  ? 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/25'
+                  : 'bg-emerald-600 hover:bg-emerald-500 text-white border-transparent shadow-lg shadow-emerald-600/15'
+              }`}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>{showFormPanel ? 'Formu Kapat' : 'Yeni Taşınmaz Ekle'}</span>
+            </button>
+          )}
+          <div className="flex items-center space-x-1 bg-slate-900/50 p-1 rounded-xl border border-white/5 shadow-inner">
+            <button
+              onClick={() => setViewMode('standard')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                viewMode === 'standard'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <FormInput className="w-3.5 h-3.5" />
+              <span>Klasik Form</span>
+            </button>
+            <button
+              onClick={() => setViewMode('excel')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                viewMode === 'excel'
+                  ? 'bg-emerald-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <Grid className="w-3.5 h-3.5" />
+              <span>Excel Tablo</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -337,7 +355,7 @@ export default function Tasinmazlar(): React.JSX.Element {
       {viewMode === 'standard' ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
         {/* Left Side: List & Filters (2 Cols) */}
-        <div className="lg:col-span-2 flex flex-col space-y-4 min-h-0">
+        <div className={`${showFormPanel ? 'lg:col-span-2' : 'lg:col-span-3'} flex flex-col space-y-4 min-h-0`}>
           {/* Search & Filters */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="relative md:col-span-1">
@@ -524,22 +542,35 @@ export default function Tasinmazlar(): React.JSX.Element {
         </div>
 
         {/* Right Side: Form (1 Col) */}
-        <div className="glass-card p-6 rounded-2xl h-fit">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Layers className="h-5 w-5 text-indigo-400" />
-              {editingId ? 'Taşınmazı Düzenle' : 'Yeni Taşınmaz Ekle'}
-            </h3>
-            {editingId && (
-              <button
-                onClick={resetForm}
-                className="text-slate-400 hover:text-slate-200"
-                title="İptal Et"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            )}
-          </div>
+        {showFormPanel && (
+          <div className="glass-card p-6 rounded-2xl h-fit border border-indigo-500/10 animate-in slide-in-from-right duration-250">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Layers className="h-5 w-5 text-indigo-400" />
+                {editingId ? 'Taşınmazı Düzenle' : 'Yeni Taşınmaz Ekle'}
+              </h3>
+              <div className="flex items-center gap-2">
+                {editingId && (
+                  <button
+                    onClick={resetForm}
+                    className="text-slate-400 hover:text-slate-200"
+                    title="İptal Et"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    resetForm()
+                    setShowFormPanel(false)
+                  }}
+                  className="p-1 hover:bg-slate-800 text-slate-450 hover:text-slate-200 rounded transition cursor-pointer"
+                  title="Formu Kapat"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
 
           <form onSubmit={handleSave} className="space-y-4">
             {error && (
@@ -691,6 +722,7 @@ export default function Tasinmazlar(): React.JSX.Element {
             </div>
           </form>
         </div>
+        )}
       </div>
       ) : (
         <div className="flex-1 flex flex-col min-h-0 bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden shadow-2xl relative">

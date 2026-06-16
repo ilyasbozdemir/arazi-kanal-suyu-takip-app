@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Droplet, Users, MapPin, Receipt, ShieldAlert, CheckCircle2 } from 'lucide-react'
+import { Droplet, Users, MapPin, Receipt, ShieldAlert, CheckCircle2, Calendar } from 'lucide-react'
 
 interface DashboardStats {
   totalTasinmaz: number
@@ -18,11 +18,21 @@ interface RecentSlip {
   sulama_suresi_saat: number
   ucret: number
   odeme_durumu: string
+  ada?: string
+  parsel?: string
 }
 
 interface CanalChartData {
   kanal_adi: string
   total_hours: number
+}
+
+interface TodayStats {
+  count: number
+  totalHours: number
+  totalUcret: number
+  totalPaid: number
+  totalUnpaid: number
 }
 
 export default function Dashboard(): React.JSX.Element {
@@ -35,6 +45,15 @@ export default function Dashboard(): React.JSX.Element {
     unpaidAmount: 0
   })
 
+  const [todayStats, setTodayStats] = useState<TodayStats>({
+    count: 0,
+    totalHours: 0,
+    totalUcret: 0,
+    totalPaid: 0,
+    totalUnpaid: 0
+  })
+
+  const [todaySlips, setTodaySlips] = useState<RecentSlip[]>([])
   const [recentSlips, setRecentSlips] = useState<RecentSlip[]>([])
   const [chartData, setChartData] = useState<CanalChartData[]>([])
 
@@ -58,11 +77,11 @@ export default function Dashboard(): React.JSX.Element {
       const resRecent = await window.api.dbQuery(`
         SELECT s.id, s.sulama_tarihi, s.sulama_suresi_saat, s.ucret, s.odeme_durumu, 
                t.tapu_sahibi, g.ad_soyad 
-        FROM sulamalar s 
-        JOIN tasinmazlar t ON s.tasinmaz_id = t.id 
-        JOIN gorevliler g ON s.gorevli_id = g.id 
-        ORDER BY s.sulama_tarihi DESC, s.id DESC 
-        LIMIT 5
+         FROM sulamalar s 
+         JOIN tasinmazlar t ON s.tasinmaz_id = t.id 
+         JOIN gorevliler g ON s.gorevli_id = g.id 
+         ORDER BY s.sulama_tarihi DESC, s.id DESC 
+         LIMIT 5
       `)
 
       // 5. Fetch canal usage for chart
@@ -74,6 +93,32 @@ export default function Dashboard(): React.JSX.Element {
         ORDER BY hours DESC
         LIMIT 6
       `)
+
+      // 6. Fetch today's stats
+      const todayStr = new Date().toISOString().split('T')[0]
+      const resToday = await window.api.dbQuery(
+        `SELECT 
+           COUNT(*) as count, 
+           SUM(sulama_suresi_saat) as total_hours, 
+           SUM(ucret) as total_ucret,
+           SUM(CASE WHEN odeme_durumu = 'Ödendi' THEN ucret ELSE 0 END) as total_paid,
+           SUM(CASE WHEN odeme_durumu = 'Ödenmedi' THEN ucret ELSE 0 END) as total_unpaid
+         FROM sulamalar 
+         WHERE sulama_tarihi = ?`,
+        [todayStr]
+      )
+
+      // 7. Fetch today's slips
+      const resTodaySlips = await window.api.dbQuery(
+        `SELECT s.id, s.sulama_tarihi, s.sulama_suresi_saat, s.ucret, s.odeme_durumu, 
+               t.tapu_sahibi, g.ad_soyad, t.ada, t.parsel
+         FROM sulamalar s 
+         JOIN tasinmazlar t ON s.tasinmaz_id = t.id 
+         JOIN gorevliler g ON s.gorevli_id = g.id 
+         WHERE s.sulama_tarihi = ?
+         ORDER BY s.id DESC`,
+        [todayStr]
+      )
 
       const totalTasinmaz = resTasinmaz[0]?.count || 0
       const totalGorevli = resGorevli[0]?.count || 0
@@ -91,7 +136,17 @@ export default function Dashboard(): React.JSX.Element {
         unpaidAmount
       })
 
+      const todayRow = resToday[0]
+      setTodayStats({
+        count: todayRow?.count || 0,
+        totalHours: Number(todayRow?.total_hours || 0),
+        totalUcret: Number(todayRow?.total_ucret || 0),
+        totalPaid: Number(todayRow?.total_paid || 0),
+        totalUnpaid: Number(todayRow?.total_unpaid || 0)
+      })
+
       setRecentSlips(resRecent)
+      setTodaySlips(resTodaySlips)
 
       setChartData(
         resChart.map((item: any) => ({
@@ -166,6 +221,43 @@ export default function Dashboard(): React.JSX.Element {
             <h3 className="text-2xl font-bold text-white mt-1">
               ₺ {stats.totalUcret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
             </h3>
+          </div>
+        </div>
+      </div>
+
+      {/* Bugünün Özeti */}
+      <div className="glass-card p-5 rounded-2xl border border-indigo-500/20 bg-indigo-950/5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex items-center space-x-3 shrink-0">
+            <div className="p-3 bg-indigo-500/10 text-indigo-400 rounded-xl">
+              <Calendar className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-white">Bugünün Sulama Özeti</h3>
+              <p className="text-xs text-slate-400">Günün tarihine ({new Date().toLocaleDateString('tr-TR')}) ait özet döküm.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 flex-1 max-w-4xl">
+            <div className="bg-slate-900/40 p-3 rounded-xl border border-white/5 text-center">
+              <span className="text-[10px] text-slate-400 uppercase font-bold block">Bugün Fişi</span>
+              <span className="text-base font-extrabold text-white">{todayStats.count} Adet</span>
+            </div>
+            <div className="bg-slate-900/40 p-3 rounded-xl border border-white/5 text-center">
+              <span className="text-[10px] text-slate-400 uppercase font-bold block">Toplam Süre</span>
+              <span className="text-base font-extrabold text-cyan-400">{todayStats.totalHours.toFixed(1)} sa</span>
+            </div>
+            <div className="bg-slate-900/40 p-3 rounded-xl border border-white/5 text-center">
+              <span className="text-[10px] text-slate-400 uppercase font-bold block">Tahakkuk</span>
+              <span className="text-base font-extrabold text-white">₺{todayStats.totalUcret.toLocaleString('tr-TR')}</span>
+            </div>
+            <div className="bg-slate-900/40 p-3 rounded-xl border border-white/5 text-center">
+              <span className="text-[10px] text-slate-400 uppercase font-bold block">Tahsil Edilen</span>
+              <span className="text-base font-extrabold text-emerald-450">₺{todayStats.totalPaid.toLocaleString('tr-TR')}</span>
+            </div>
+            <div className="bg-slate-900/40 p-3 rounded-xl border border-white/5 text-center col-span-2 sm:col-span-1">
+              <span className="text-[10px] text-slate-400 uppercase font-bold block">Kalan Borç</span>
+              <span className="text-base font-extrabold text-amber-450">₺{todayStats.totalUnpaid.toLocaleString('tr-TR')}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -262,63 +354,124 @@ export default function Dashboard(): React.JSX.Element {
           </div>
         </div>
 
-        {/* Recent Slips List */}
-        <div className="glass-card p-6 rounded-2xl lg:col-span-2">
-          <h3 className="text-lg font-bold text-white mb-1">Son Fiş Girişleri</h3>
-          <p className="text-xs text-slate-400 mb-4">Sisteme kaydedilen son 5 sulama kaydı.</p>
+        {/* Right side lists */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Today's Slips List */}
+          <div className="glass-card p-6 rounded-2xl">
+            <h3 className="text-lg font-bold text-white mb-1">Bugünün Fiş Girişleri</h3>
+            <p className="text-xs text-slate-400 mb-4">Bugün sisteme kaydedilen tüm sulama fişleri.</p>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  <th className="py-3 px-2">Tarih</th>
-                  <th className="py-3 px-2">Tapu Sahibi</th>
-                  <th className="py-3 px-2">Görevli</th>
-                  <th className="py-3 px-2 text-right">Süre (Saat)</th>
-                  <th className="py-3 px-2 text-right">Ücret</th>
-                  <th className="py-3 px-2 text-center">Durum</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentSlips.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="text-center py-8 text-slate-500 text-sm">
-                      Kayıtlı sulama fişi bulunmuyor.
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    <th className="py-3 px-2">Tapu Sahibi</th>
+                    <th className="py-3 px-2">Konum (Ada-Parsel)</th>
+                    <th className="py-3 px-2">Görevli</th>
+                    <th className="py-3 px-2 text-right">Süre (Saat)</th>
+                    <th className="py-3 px-2 text-right">Ücret</th>
+                    <th className="py-3 px-2 text-center">Durum</th>
                   </tr>
-                ) : (
-                  recentSlips.map((slip) => (
-                    <tr
-                      key={slip.id}
-                      className="border-b border-slate-800/50 hover:bg-slate-800/20 text-sm text-slate-300 transition"
-                    >
-                      <td className="py-3 px-2 whitespace-nowrap">
-                        {new Date(slip.sulama_tarihi).toLocaleDateString('tr-TR')}
-                      </td>
-                      <td className="py-3 px-2 font-medium text-white">{slip.tapu_sahibi}</td>
-                      <td className="py-3 px-2">{slip.ad_soyad}</td>
-                      <td className="py-3 px-2 text-right text-indigo-300">
-                        {slip.sulama_suresi_saat} sa
-                      </td>
-                      <td className="py-3 px-2 text-right font-medium">
-                        ₺ {slip.ucret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="py-3 px-2 text-center">
-                        <span
-                          className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${
-                            slip.odeme_durumu === 'Ödendi'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                              : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                          }`}
-                        >
-                          {slip.odeme_durumu}
-                        </span>
+                </thead>
+                <tbody>
+                  {todaySlips.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="text-center py-8 text-slate-550 text-xs font-medium">
+                        Bugün henüz kaydedilmiş bir sulama fişi bulunmuyor.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    todaySlips.map((slip) => (
+                      <tr
+                        key={slip.id}
+                        className="border-b border-slate-800/50 hover:bg-slate-800/20 text-sm text-slate-300 transition"
+                      >
+                        <td className="py-3 px-2 font-medium text-white">{slip.tapu_sahibi}</td>
+                        <td className="py-3 px-2 font-mono text-slate-400">{slip.ada || '-'}-{slip.parsel || '-'}</td>
+                        <td className="py-3 px-2">{slip.ad_soyad}</td>
+                        <td className="py-3 px-2 text-right text-indigo-300">
+                          {slip.sulama_suresi_saat} sa
+                        </td>
+                        <td className="py-3 px-2 text-right font-medium">
+                          ₺ {slip.ucret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="py-3 px-2 text-center">
+                          <span
+                            className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${
+                              slip.odeme_durumu === 'Ödendi'
+                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                            }`}
+                          >
+                            {slip.odeme_durumu}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Recent Slips List */}
+          <div className="glass-card p-6 rounded-2xl">
+            <h3 className="text-lg font-bold text-white mb-1">Son Fiş Girişleri</h3>
+            <p className="text-xs text-slate-400 mb-4">Sisteme kaydedilen son 5 sulama kaydı.</p>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    <th className="py-3 px-2">Tarih</th>
+                    <th className="py-3 px-2">Tapu Sahibi</th>
+                    <th className="py-3 px-2">Görevli</th>
+                    <th className="py-3 px-2 text-right">Süre (Saat)</th>
+                    <th className="py-3 px-2 text-right">Ücret</th>
+                    <th className="py-3 px-2 text-center">Durum</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentSlips.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="text-center py-8 text-slate-500 text-sm">
+                        Kayıtlı sulama fişi bulunmuyor.
+                      </td>
+                    </tr>
+                  ) : (
+                    recentSlips.map((slip) => (
+                      <tr
+                        key={slip.id}
+                        className="border-b border-slate-800/50 hover:bg-slate-800/20 text-sm text-slate-300 transition"
+                      >
+                        <td className="py-3 px-2 whitespace-nowrap">
+                          {new Date(slip.sulama_tarihi).toLocaleDateString('tr-TR')}
+                        </td>
+                        <td className="py-3 px-2 font-medium text-white">{slip.tapu_sahibi}</td>
+                        <td className="py-3 px-2">{slip.ad_soyad}</td>
+                        <td className="py-3 px-2 text-right text-indigo-300">
+                          {slip.sulama_suresi_saat} sa
+                        </td>
+                        <td className="py-3 px-2 text-right font-medium">
+                          ₺ {slip.ucret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="py-3 px-2 text-center">
+                          <span
+                            className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${
+                              slip.odeme_durumu === 'Ödendi'
+                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                            }`}
+                          >
+                            {slip.odeme_durumu}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>

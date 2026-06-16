@@ -85,7 +85,7 @@ const renderReceiptContent = (s: Sulama, logo: string | null, name: string): Rea
           <h1 className="text-xs font-extrabold tracking-wide uppercase text-black leading-tight">
             {name}
           </h1>
-          <p className="text-[9px] text-slate-650 font-sans mt-0.5">Tarım Sulama Kooperatifi / Birliği</p>
+          <p className="text-[9px] text-slate-500 font-sans mt-0.5">Tarımsal Sulama Hizmetleri</p>
           <p className="text-[9px] text-slate-500 font-sans font-medium">
             Fiş Tarihi: {new Date(s.sulama_tarihi).toLocaleDateString('tr-TR')}
           </p>

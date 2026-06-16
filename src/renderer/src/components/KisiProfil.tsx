@@ -53,7 +53,7 @@ const renderA5ReceiptContent = (s: any, logo: string | null, name: string) => {
           <h1 className="text-xs font-extrabold tracking-wide uppercase text-black leading-tight">
             {name}
           </h1>
-          <p className="text-[9px] text-slate-650 font-sans mt-0.5">Tarım Sulama Kooperatifi / Birliği</p>
+          <p className="text-[9px] text-slate-500 font-sans mt-0.5">Tarımsal Sulama Hizmetleri</p>
           <p className="text-[9px] text-slate-500 font-sans font-medium">
             Fiş Tarihi: {new Date(s.sulama_tarihi).toLocaleDateString('tr-TR')}
           </p>
@@ -259,9 +259,6 @@ export default function KisiProfil({ ownerName }: KisiProfilProps): React.JSX.El
 
   const handlePrintStatement = () => {
     setShowDebtStatementModal(true)
-    setTimeout(() => {
-      window.print()
-    }, 150)
   }
 
   return (
@@ -427,7 +424,7 @@ export default function KisiProfil({ ownerName }: KisiProfilProps): React.JSX.El
                       <td className="py-2 px-2 text-right font-bold text-white">₺{s.ucret}</td>
                       <td className="py-2 px-2 text-center">
                         <span
-                          className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
+                           className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
                             s.odeme_durumu === 'Ödendi'
                               ? 'bg-emerald-500/15 text-emerald-400'
                               : 'bg-amber-500/15 text-amber-400 border border-amber-500/10'
@@ -493,93 +490,123 @@ export default function KisiProfil({ ownerName }: KisiProfilProps): React.JSX.El
 
       {/* 6. Print Modal (A4 Statement / Notice mockup layout for printing ledger) */}
       {showDebtStatementModal && (
-        <div className="print-only hidden w-full bg-white text-black p-10 font-serif leading-relaxed min-h-screen">
-          <style>{`
-            @media print {
-              @page {
-                size: A4 portrait;
-                margin: 15mm;
-              }
-              body {
-                background: white !important;
-                color: black !important;
-              }
-              .no-print {
-                display: none !important;
-              }
-              .print-only {
-                display: block !important;
-              }
-            }
-          `}</style>
-          <div className="max-w-3xl mx-auto space-y-6">
-            {/* Header */}
-            <div className="text-center pb-4 border-b-2 border-black space-y-1">
-              <h1 className="text-base font-extrabold uppercase tracking-wider">{kurumAdi}</h1>
-              <h2 className="text-xs font-bold text-slate-750">ÖDEME BİLDİRİMİ VE BORÇ DETAYI</h2>
-              <p className="text-[10px] text-slate-500">Tarih: {new Date().toLocaleDateString('tr-TR')}</p>
-            </div>
-
-            {/* Recipient info */}
-            <div className="space-y-1.5 text-xs">
-              <p>
-                <strong>Sayın:</strong> {ownerName}
-              </p>
-              <p>
-                Arazilerinizde gerçekleştirilen tarımsal sulama işlemlerine ait ödenmemiş borç kayıtlarınızın
-                dökümü aşağıda sunulmuştur. En kısa süre içerisinde borcun kapatılması için ödeme yapılması
-                hususunu rica ederiz.
-              </p>
-            </div>
-
-            {/* Table */}
-            <table className="w-full text-left border-collapse text-[10px] my-4 border border-slate-350">
-              <thead>
-                <tr className="border-b-2 border-black font-bold bg-slate-100">
-                  <th className="p-2 border border-slate-300">Tarih</th>
-                  <th className="p-2 border border-slate-300">Konum (Ada-Parsel)</th>
-                  <th className="p-2 border border-slate-300 text-right">Süre (Saat)</th>
-                  <th className="p-2 border border-slate-300 text-right">Tutar</th>
-                  <th className="p-2 border border-slate-300">Görevli (Merav)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {slips
-                  .filter((s) => s.odeme_durumu === 'Ödenmedi')
-                  .map((s) => (
-                    <tr key={s.id} className="border-b border-slate-300">
-                      <td className="p-2 border border-slate-300">
-                        {new Date(s.sulama_tarihi).toLocaleDateString('tr-TR')}
-                      </td>
-                      <td className="p-2 border border-slate-300 font-mono">
-                        {s.ada || '-'}-{s.parsel || '-'} ({s.mahalle_koy})
-                      </td>
-                      <td className="p-2 border border-slate-300 text-right">{s.sulama_suresi_saat} sa</td>
-                      <td className="p-2 border border-slate-300 text-right font-bold">
-                        ₺{s.ucret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="p-2 border border-slate-300">{s.ad_soyad}</td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-
-            {/* Summary */}
-            <div className="flex justify-end text-xs font-extrabold border-t-2 border-black pt-3">
-              <span>TOPLAM BORÇ TUTARI: ₺ {totalUnpaid.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</span>
-            </div>
-
-            {/* Signatures */}
-            <div className="grid grid-cols-2 gap-12 pt-12 text-center text-xs">
-              <div>
-                <span className="block font-bold">Tebliğ Eden Yetkili</span>
-                <span className="block h-12"></span>
-                <span className="block border-t border-black w-24 mx-auto mt-2">İmza</span>
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm no-print">
+          <div className="bg-white text-black rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col border border-slate-200 animate-fadeIn">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center p-4 border-b border-slate-200 bg-slate-50 sticky top-0 z-10">
+              <h3 className="text-sm font-bold text-slate-850">Borç Ekstresi Önizleme (A4)</h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className="bg-indigo-650 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shadow-md shadow-indigo-600/10"
+                >
+                  <Printer className="h-4 w-4" />
+                  <span>Ekstreyi Yazdır (A4)</span>
+                </button>
+                <button
+                  onClick={() => setShowDebtStatementModal(false)}
+                  className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 px-4 rounded-xl text-xs transition cursor-pointer"
+                >
+                  Kapat
+                </button>
               </div>
-              <div>
-                <span className="block font-bold">Tebliğ Alan Alıcı</span>
-                <span className="block h-12"></span>
-                <span className="block border-t border-black w-24 mx-auto mt-2">İmza</span>
+            </div>
+
+            {/* Modal Content / A4 Statement */}
+            <div className="p-8 md:p-12 font-serif leading-relaxed bg-white print-content">
+              <style>{`
+                @media print {
+                  body * {
+                    visibility: hidden;
+                  }
+                  .print-content, .print-content * {
+                    visibility: visible;
+                  }
+                  .print-content {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    width: 100% !important;
+                    padding: 0 !important;
+                    margin: 0 !important;
+                  }
+                  .no-print {
+                    display: none !important;
+                  }
+                }
+              `}</style>
+              <div className="max-w-3xl mx-auto space-y-6">
+                {/* Header */}
+                <div className="text-center pb-4 border-b-2 border-black space-y-1">
+                  <h1 className="text-base font-extrabold uppercase tracking-wider">{kurumAdi}</h1>
+                  <h2 className="text-xs font-bold text-slate-700">ÖDEME BİLDİRİMİ VE BORÇ DETAYI</h2>
+                  <p className="text-[10px] text-slate-500">Tarih: {new Date().toLocaleDateString('tr-TR')}</p>
+                </div>
+
+                {/* Recipient info */}
+                <div className="space-y-1.5 text-xs">
+                  <p>
+                    <strong>Sayın:</strong> {ownerName}
+                  </p>
+                  <p>
+                    Arazilerinizde gerçekleştirilen tarımsal sulama işlemlerine ait ödenmiş/ödenmemiş tüm kayıtlarınızın dökümü ve ödeme durumları aşağıda sunulmuştur.
+                  </p>
+                </div>
+
+                {/* Table */}
+                <table className="w-full text-left border-collapse text-[10px] my-4 border border-slate-350">
+                  <thead>
+                    <tr className="border-b-2 border-black font-bold bg-slate-100">
+                      <th className="p-2 border border-slate-300">Tarih</th>
+                      <th className="p-2 border border-slate-300">Konum (Ada-Parsel)</th>
+                      <th className="p-2 border border-slate-300 text-right">Süre (Saat)</th>
+                      <th className="p-2 border border-slate-300 text-right">Tutar</th>
+                      <th className="p-2 border border-slate-300 text-center">Ödeme Durumu</th>
+                      <th className="p-2 border border-slate-300">Görevli (Merav)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {slips.map((s) => (
+                      <tr key={s.id} className="border-b border-slate-300">
+                        <td className="p-2 border border-slate-300">
+                          {new Date(s.sulama_tarihi).toLocaleDateString('tr-TR')}
+                        </td>
+                        <td className="p-2 border border-slate-300 font-mono">
+                          {s.ada || '-'}-{s.parsel || '-'} ({s.mahalle_koy})
+                        </td>
+                        <td className="p-2 border border-slate-300 text-right">{s.sulama_suresi_saat} sa</td>
+                        <td className="p-2 border border-slate-300 text-right font-bold">
+                          ₺{s.ucret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className={`p-2 border border-slate-300 text-center font-bold ${s.odeme_durumu === 'Ödendi' ? 'text-emerald-700' : 'text-amber-700'}`}>
+                          {s.odeme_durumu}
+                        </td>
+                        <td className="p-2 border border-slate-300">{s.ad_soyad}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* Summary */}
+                <div className="flex justify-end text-[10px] font-extrabold border-t-2 border-black pt-3 space-x-6">
+                  <span>Toplam Tutar: ₺{totalCost.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</span>
+                  <span className="text-emerald-700">Ödenen: ₺{totalPaid.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</span>
+                  <span className="text-amber-700">Kalan Borç: ₺{totalUnpaid.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</span>
+                </div>
+
+                {/* Signatures */}
+                <div className="grid grid-cols-2 gap-12 pt-12 text-center text-xs">
+                  <div>
+                    <span className="block font-bold">Tebliğ Eden Yetkili</span>
+                    <span className="block h-12"></span>
+                    <span className="block border-t border-black w-24 mx-auto mt-2">İmza</span>
+                  </div>
+                  <div>
+                    <span className="block font-bold">Tebliğ Alan Alıcı</span>
+                    <span className="block h-12"></span>
+                    <span className="block border-t border-black w-24 mx-auto mt-2">İmza</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
