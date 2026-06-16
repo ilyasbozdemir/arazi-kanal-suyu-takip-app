@@ -356,7 +356,7 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
   }
 
   return (
-    <div className="space-y-6 max-w-2xl pb-12">
+    <div className="space-y-6 w-full pb-12">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-white">Ayarlar</h1>

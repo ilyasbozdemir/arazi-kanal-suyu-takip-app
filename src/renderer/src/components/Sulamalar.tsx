@@ -213,7 +213,7 @@ export default function Sulamalar({
   const [gorevliId, setGorevliId] = useState('')
   const [sulamaTarihi, setSulamaTarihi] = useState(new Date().toISOString().split('T')[0])
   const [sulamaSuresiSaat, setSulamaSuresiSaat] = useState('')
-  const [saatUcreti, setSaatUcreti] = useState('100')
+  const [saatUcreti, setSaatUcreti] = useState('')
   const [suUcretleriList, setSuUcretleriList] = useState<string[]>(['150', '200', '250'])
   const [ucret, setUcret] = useState('')
   const [odemeDurumu, setOdemeDurumu] = useState('Ödenmedi')
@@ -276,7 +276,7 @@ export default function Sulamalar({
       if (ucretRes && ucretRes.length > 0) {
         setSaatUcreti(ucretRes[0].deger)
       } else {
-        setSaatUcreti('150')
+        setSaatUcreti('100')
       }
 
       // Load active officers for dropdown
