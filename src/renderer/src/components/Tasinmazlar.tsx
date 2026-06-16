@@ -763,25 +763,16 @@ export default function Tasinmazlar(): React.JSX.Element {
                     </div>
                     {/* kanal_adi */}
                     <div className="col-span-2">
-                      {definedChannels.length > 1 ? (
-                        <select
-                          className="bg-transparent border border-transparent hover:border-slate-700 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-white"
-                          defaultValue={row.kanal_adi || ''}
-                          onChange={(e) => updateExcelRow(row.id, 'kanal_adi', e.target.value)}
-                        >
-                          <option value="" className="bg-slate-900 text-slate-200">Seçiniz...</option>
-                          {definedChannels.map(c => (
-                            <option key={c} value={c} className="bg-slate-900 text-slate-200">{c}</option>
-                          ))}
-                        </select>
-                      ) : (
-                        <input
-                          type="text"
-                          className="bg-transparent border border-transparent hover:border-slate-700 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-white"
-                          defaultValue={row.kanal_adi || ''}
-                          onBlur={(e) => updateExcelRow(row.id, 'kanal_adi', e.target.value)}
-                        />
-                      )}
+                      <select
+                        className="bg-transparent border border-transparent hover:border-slate-700 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-white"
+                        defaultValue={row.kanal_adi || ''}
+                        onChange={(e) => updateExcelRow(row.id, 'kanal_adi', e.target.value)}
+                      >
+                        <option value="" className="bg-slate-900 text-slate-200">Seçiniz...</option>
+                        {definedChannels.map(c => (
+                          <option key={c} value={c} className="bg-slate-900 text-slate-200">{c}</option>
+                        ))}
+                      </select>
                     </div>
                     {/* aciklama & Delete button */}
                     <div className="col-span-2 flex items-center space-x-1 pr-1">
@@ -854,26 +845,16 @@ export default function Tasinmazlar(): React.JSX.Element {
                 />
               </div>
               <div className="col-span-2">
-                {definedChannels.length > 1 ? (
-                  <select
-                    className="bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded px-2 py-1.5 w-full text-xs text-white"
-                    value={newRow.kanal_adi}
-                    onChange={(e) => setNewRow({ ...newRow, kanal_adi: e.target.value })}
-                  >
-                    <option value="" className="bg-slate-900 text-slate-200">Kanal Seç...</option>
-                    {definedChannels.map(c => (
-                      <option key={c} value={c} className="bg-slate-900 text-slate-200">{c}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    placeholder="Kanal Adı"
-                    className="bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded px-2 py-1.5 w-full text-xs text-white"
-                    value={newRow.kanal_adi}
-                    onChange={(e) => setNewRow({ ...newRow, kanal_adi: e.target.value })}
-                  />
-                )}
+                <select
+                  className="bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded px-2 py-1.5 w-full text-xs text-white"
+                  value={newRow.kanal_adi}
+                  onChange={(e) => setNewRow({ ...newRow, kanal_adi: e.target.value })}
+                >
+                  <option value="" className="bg-slate-900 text-slate-200">Kanal Seç...</option>
+                  {definedChannels.map(c => (
+                    <option key={c} value={c} className="bg-slate-900 text-slate-200">{c}</option>
+                  ))}
+                </select>
               </div>
               <div className="col-span-2 flex items-center space-x-2">
                 <input

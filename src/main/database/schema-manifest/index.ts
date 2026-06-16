@@ -21,5 +21,12 @@ export const manifests: AppVersionManifest[] = [
     schema_max: 1,
     release_date: '2026-06-16',
     changes: []
+  },
+  {
+    app: '1.0.0-beta.3',
+    schema_min: 1,
+    schema_max: 1,
+    release_date: '2026-06-16',
+    changes: []
   }
 ]
