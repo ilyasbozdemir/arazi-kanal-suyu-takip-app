@@ -13,7 +13,7 @@ import {
   Grid,
   FormInput,
   Plus,
-  CheckCircle2
+  User
 } from 'lucide-react'
 
 interface Sulama {
@@ -74,9 +74,8 @@ export default function Sulamalar({
   const [showPrintModal, setShowPrintModal] = useState<Sulama | null>(null)
 
   // Form State (Standard Mode)
-  const [tasinmazId, setTasinmazId] = useState('')
   const [fisNoGiris, setFisNoGiris] = useState('')
-  const [bulunanTasinmazSahibi, setBulunanTasinmazSahibi] = useState<string | null>(null)
+  const [malikGiris, setMalikGiris] = useState('')
 
   const [gorevliId, setGorevliId] = useState('')
   const [sulamaTarihi, setSulamaTarihi] = useState(new Date().toISOString().split('T')[0])
@@ -132,7 +131,7 @@ export default function Sulamalar({
       if (ucretListRes && ucretListRes.length > 0) {
         try {
           setSuUcretleriList(JSON.parse(ucretListRes[0].deger))
-        } catch (e) {
+        } catch {
           setSuUcretleriList(ucretListRes[0].deger.split(',').filter(Boolean))
         }
       }
@@ -197,8 +196,15 @@ export default function Sulamalar({
     e.preventDefault()
     setError('')
 
-    if (!tasinmazId) {
-      setError('Lütfen bir taşınmaz seçin.')
+    const malikName = malikGiris.trim()
+    if (!malikName) {
+      setError('Lütfen tapu sahibi / malik adını girin.')
+      return
+    }
+
+    const fisNo = fisNoGiris.trim()
+    if (!fisNo) {
+      setError('Lütfen Ada-Parsel bilgisini girin.')
       return
     }
 
@@ -219,7 +225,35 @@ export default function Sulamalar({
       return
     }
 
+    const parts = fisNo
+      .replace(/[\/\\]/g, '-')
+      .replace(/\s+/g, '-')
+      .split('-')
+      .map((s) => s.trim())
+    const ada = parts[0] || ''
+    const parsel = parts[1] || ''
+
     try {
+      let finalTasinmazId = 0
+
+      // Find if there is a matching property in the database
+      const existing = await window.api.dbQuery(
+        'SELECT id FROM tasinmazlar WHERE LOWER(TRIM(tapu_sahibi)) = LOWER(TRIM(?)) AND ada = ? AND parsel = ?',
+        [malikName, ada, parsel]
+      )
+
+      if (existing && existing.length > 0) {
+        finalTasinmazId = existing[0].id
+      } else {
+        // Automatically insert new property record
+        const insertRes = await window.api.dbRun(
+          `INSERT INTO tasinmazlar (tapu_sahibi, ada, parsel, mahalle_koy, alan_m2, kanal_adi, aciklama) 
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [malikName, ada, parsel, '', 0, '', 'Sulamadan otomatik oluşturuldu']
+        )
+        finalTasinmazId = insertRes.lastInsertRowid
+      }
+
       if (editingId) {
         // Update
         await window.api.dbRun(
@@ -227,7 +261,7 @@ export default function Sulamalar({
            SET tasinmaz_id = ?, gorevli_id = ?, sulama_tarihi = ?, sulama_suresi_saat = ?, ucret = ?, odeme_durumu = ?, aciklama = ? 
            WHERE id = ?`,
           [
-            parseInt(tasinmazId),
+            finalTasinmazId,
             parseInt(gorevliId),
             sulamaTarihi,
             hours,
@@ -243,7 +277,7 @@ export default function Sulamalar({
           `INSERT INTO sulamalar (tasinmaz_id, gorevli_id, sulama_tarihi, sulama_suresi_saat, ucret, odeme_durumu, aciklama) 
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
           [
-            parseInt(tasinmazId),
+            finalTasinmazId,
             parseInt(gorevliId),
             sulamaTarihi,
             hours,
@@ -387,16 +421,19 @@ export default function Sulamalar({
   const handleEdit = (s: Sulama): void => {
     onViewModeChange('standard') // Switch to standard view to edit in form
     setEditingId(s.id)
-    setTasinmazId(s.tasinmaz_id.toString())
 
-    // Auto-fill fisNoGiris if in hizli mode
+    // Auto-fill fisNoGiris and malikGiris
     const t = tasinmazlar.find((x) => x.id === s.tasinmaz_id)
-    if (t && t.ada && t.parsel) {
-      setFisNoGiris(`${t.ada}-${t.parsel}`)
-      setBulunanTasinmazSahibi(`${t.tapu_sahibi} (${t.mahalle_koy})`)
+    if (t) {
+      if (t.ada && t.parsel) {
+        setFisNoGiris(`${t.ada}-${t.parsel}`)
+      } else {
+        setFisNoGiris('')
+      }
+      setMalikGiris(t.tapu_sahibi)
     } else {
       setFisNoGiris('')
-      setBulunanTasinmazSahibi(null)
+      setMalikGiris('')
     }
 
     setGorevliId(s.gorevli_id.toString())
@@ -425,9 +462,8 @@ export default function Sulamalar({
 
   const resetForm = (): void => {
     setEditingId(null)
-    setTasinmazId('')
     setFisNoGiris('')
-    setBulunanTasinmazSahibi(null)
+    setMalikGiris('')
     setGorevliId(gorevliler.length > 0 ? gorevliler[0].id.toString() : '')
     setSulamaTarihi(new Date().toISOString().split('T')[0])
     setSulamaSuresiSaat('')
@@ -444,29 +480,6 @@ export default function Sulamalar({
 
   const handleFisNoChange = (val: string) => {
     setFisNoGiris(val)
-    // format is expected to be "Ada-Parsel" or "Ada/Parsel" or "Ada Parsel"
-    const parts = val
-      .replace(/[\/\\]/g, '-')
-      .replace(/\s+/g, '-')
-      .split('-')
-      .map((s) => s.trim())
-
-    if (parts.length >= 2 && parts[0] && parts[1]) {
-      const ada = parts[0]
-      const parsel = parts[1]
-
-      const match = tasinmazlar.find((t) => t.ada === ada && t.parsel === parsel)
-      if (match) {
-        setTasinmazId(match.id.toString())
-        setBulunanTasinmazSahibi(`${match.tapu_sahibi} (${match.mahalle_koy})`)
-      } else {
-        setTasinmazId('')
-        setBulunanTasinmazSahibi(null)
-      }
-    } else {
-      setTasinmazId('')
-      setBulunanTasinmazSahibi(null)
-    }
   }
 
   // Search and Filter Slips
@@ -502,9 +515,11 @@ export default function Sulamalar({
     overscan: 10
   })
 
-  const matchedTasinmaz = tasinmazlar.find((t) => t.id.toString() === tasinmazId)
-  const matchedSlips = matchedTasinmaz
-    ? sulamalar.filter((s) => s.tasinmaz_id === matchedTasinmaz.id)
+  const matchedSlips = malikGiris.trim()
+    ? sulamalar.filter(
+        (s) =>
+          s.tapu_sahibi.trim().toLowerCase() === malikGiris.trim().toLowerCase()
+      )
     : []
   const unpaidSlips = matchedSlips.filter((s) => s.odeme_durumu === 'Ödenmedi')
   const totalUnpaidAmount = unpaidSlips.reduce((sum, s) => sum + s.ucret, 0)
@@ -792,110 +807,88 @@ export default function Sulamalar({
                 </div>
               )}
 
-              {/* Select Tasinmaz or Fast Entry */}
+              {/* Ada-Parsel Giriş */}
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider flex items-center gap-1.5">
+                  <Grid className="w-3.5 h-3.5 text-indigo-400" />
+                  Ada-Parsel *
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2.5 rounded-xl glass-input text-xs font-mono font-bold tracking-wider"
+                    placeholder="Örn: 250-5"
+                    value={fisNoGiris}
+                    onChange={(e) => handleFisNoChange(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="text-[10px] text-slate-500 mt-1">
+                  Ada ve parsel numarasını aralarında tire '-' olacak şekilde yazın.
+                </div>
+              </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider">
-                    Fiş No / Seri No (Ada-Parsel) *
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2.5 rounded-xl glass-input text-xs font-mono font-bold tracking-wider"
-                      placeholder="Örn: 250-5"
-                      value={fisNoGiris}
-                      onChange={(e) => handleFisNoChange(e.target.value)}
-                      required
-                    />
-                  </div>
-                  {bulunanTasinmazSahibi ? (
-                    <div className="text-xs text-emerald-400 mt-1.5 flex flex-col gap-1 font-semibold animate-fadeIn bg-emerald-500/10 p-2.5 border border-emerald-500/20 rounded-xl">
-                      <div className="flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                        <span>Bulundu: {bulunanTasinmazSahibi}</span>
-                      </div>
-                      {(() => {
-                        const parts = fisNoGiris.replace(/[\/\\]/g, '-').replace(/\s+/g, '-').split('-')
-                        if (parts.length >= 2 && parts[0] && parts[1]) {
-                          return (
-                            <span className="text-[10px] text-slate-400 font-normal">
-                              ({parts[0]} nolu Fiş Defteri, {parts[1]} seri nolu fiş yaprağı)
-                            </span>
-                          )
-                        }
-                        return null
-                      })()}
-                    </div>
-                  ) : fisNoGiris.length >= 3 ? (
-                    <div className="text-xs text-rose-400 mt-1.5 flex items-center gap-1 font-medium animate-fadeIn bg-rose-500/10 p-2.5 border border-rose-500/20 rounded-xl">
-                      <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                      <span>Eşleşen mülk/tapu kaydı bulunamadı!</span>
+              {/* Malik / Tapu Sahibi */}
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-indigo-400" />
+                  Tapu Sahibi / Malik *
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2.5 rounded-xl glass-input text-xs font-bold"
+                  placeholder="Örn: Ahmet Yılmaz"
+                  value={malikGiris}
+                  onChange={(e) => setMalikGiris(e.target.value)}
+                  required
+                />
+              </div>
+
+              {/* Debt & History Compact Summary */}
+              {malikGiris.trim() && matchedSlips.length > 0 && (
+                <div className="p-3 rounded-xl bg-slate-900/40 border border-white/5 space-y-2.5 animate-fadeIn">
+                  {/* Debt Warning */}
+                  {totalUnpaidAmount > 0 ? (
+                    <div className="px-2.5 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-lg text-[10px] flex items-center justify-between font-semibold">
+                      <span>⚠ Ödenmemiş Borç:</span>
+                      <span>₺{totalUnpaidAmount.toLocaleString('tr-TR')} ({unpaidSlips.length} Fiş)</span>
                     </div>
                   ) : (
-                    <div className="text-[10px] text-slate-500 mt-1">
-                      Örn: 250-5 (250 nolu Fiş Defteri ve 5 nolu Seri Fiş)
+                    <div className="px-2.5 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg text-[10px] font-semibold">
+                      ✓ Borcu Bulunmuyor
                     </div>
                   )}
 
-                  {/* Owner profile card with past slips popover */}
-                  {matchedTasinmaz && (
-                    <div className="mt-3 p-4 rounded-xl bg-slate-900/60 border border-indigo-500/20 space-y-3 animate-fadeIn">
-                      {/* Header / Owner Profile */}
-                      <div className="flex items-start justify-between border-b border-slate-800 pb-2">
-                        <div>
-                          <span className="text-[9px] uppercase font-bold text-indigo-400 tracking-wider">Mülk Sahibi Profili</span>
-                          <h4 className="text-xs font-bold text-white leading-tight mt-0.5">
-                            {matchedTasinmaz.tapu_sahibi}
-                          </h4>
-                          <p className="text-[10px] text-slate-400 mt-1">
-                            {matchedTasinmaz.mahalle_koy} | Ada: {matchedTasinmaz.ada} Parsel: {matchedTasinmaz.parsel} | {matchedTasinmaz.alan_m2} m²
-                          </p>
-                        </div>
-                        <div className="px-2 py-0.5 bg-indigo-500/10 text-indigo-300 text-[9px] font-bold rounded-lg uppercase tracking-wide">
-                          {matchedTasinmaz.kanal_adi || 'Kanal Belirtilmemiş'}
-                        </div>
-                      </div>
-
-                      {/* Debt Warning if any */}
-                      {totalUnpaidAmount > 0 ? (
-                        <div className="px-2.5 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-lg text-[10px] flex items-center justify-between font-semibold">
-                          <span>Ödenmemiş Borç:</span>
-                          <span>₺{totalUnpaidAmount.toLocaleString('tr-TR')} ({unpaidSlips.length} Fiş)</span>
-                        </div>
-                      ) : (
-                        <div className="px-2.5 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg text-[10px] font-semibold">
-                          Borcu Bulunmuyor
-                        </div>
-                      )}
-
-                      {/* Recent Slips List */}
-                      <div className="space-y-1.5">
-                        <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider block">Son Sulama Geçmişi</span>
-                        {matchedSlips.length === 0 ? (
-                          <span className="text-[10px] text-slate-500 italic block">Kayıtlı geçmiş sulama bulunamadı.</span>
-                        ) : (
-                          <div className="max-h-24 overflow-y-auto space-y-1 pr-1 scrollbar-thin">
-                            {matchedSlips.slice(0, 3).map((slip) => (
-                              <div key={slip.id} className="flex justify-between items-center text-[10px] bg-slate-950/40 p-1.5 rounded-lg border border-white/5">
-                                <span className="text-slate-300">
-                                  {new Date(slip.sulama_tarihi).toLocaleDateString('tr-TR')} ({slip.sulama_suresi_saat} sa)
-                                </span>
-                                <div className="flex items-center space-x-2">
-                                  <span className="font-semibold text-slate-200">₺{slip.ucret}</span>
-                                  <span className={`px-1 py-0.2 rounded text-[8px] font-bold uppercase ${
-                                    slip.odeme_durumu === 'Ödendi' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
-                                  }`}>
-                                    {slip.odeme_durumu}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
+                  {/* Recent Slips List */}
+                  <div className="space-y-1.5">
+                    <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider block">Kişinin Fiş Geçmişi ({matchedSlips.length} kayıt)</span>
+                    <div className="max-h-28 overflow-y-auto space-y-1 pr-1 scrollbar-thin">
+                      {matchedSlips.map((slip) => (
+                        <div key={slip.id} className="flex flex-col gap-0.5 text-[10px] bg-slate-950/40 p-1.5 rounded-lg border border-white/5">
+                          <div className="flex justify-between items-center">
+                            <span className="text-slate-300 font-medium">
+                              {new Date(slip.sulama_tarihi).toLocaleDateString('tr-TR')} | {slip.ada || '-'}-{slip.parsel || '-'} ({slip.sulama_suresi_saat} sa)
+                            </span>
+                            <div className="flex items-center space-x-1.5">
+                              <span className="font-semibold text-slate-200">₺{slip.ucret}</span>
+                              <span className={`px-1 py-0.5 rounded text-[8px] font-bold uppercase ${
+                                slip.odeme_durumu === 'Ödendi' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
+                              }`}>
+                                {slip.odeme_durumu}
+                              </span>
+                            </div>
                           </div>
-                        )}
-                      </div>
+                          {slip.aciklama && (
+                            <div className="text-[9px] text-indigo-300/80 border-t border-slate-900/60 pt-0.5 mt-0.5 truncate" title={slip.aciklama}>
+                              Not: {slip.aciklama}
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  )}
+                  </div>
                 </div>
+              )}
 
 
               {/* Select Gorevli */}
