@@ -261,22 +261,25 @@ export default function Sulamalar({
       const ucretListRes = await window.api.dbQuery(
         "SELECT deger FROM ayarlar WHERE anahtar = 'su_ucretleri'"
       )
+      let parsedList: string[] = ['100', '200', '250']
       if (ucretListRes && ucretListRes.length > 0) {
         try {
-          setSuUcretleriList(JSON.parse(ucretListRes[0].deger))
+          parsedList = JSON.parse(ucretListRes[0].deger)
         } catch {
-          setSuUcretleriList(ucretListRes[0].deger.split(',').filter(Boolean))
+          parsedList = ucretListRes[0].deger.split(',').map((s: string) => s.trim()).filter(Boolean)
         }
       }
+      setSuUcretleriList(parsedList)
 
-      // Load varsayilan_saat_ucreti from settings
+      // Load varsayilan_saat_ucreti from settings — validate against the list
       const ucretRes = await window.api.dbQuery(
         "SELECT deger FROM ayarlar WHERE anahtar = 'varsayilan_saat_ucreti'"
       )
-      if (ucretRes && ucretRes.length > 0) {
+      if (ucretRes && ucretRes.length > 0 && parsedList.includes(ucretRes[0].deger)) {
         setSaatUcreti(ucretRes[0].deger)
       } else {
-        setSaatUcreti('100')
+        // Varsayılan listede yoksa listenin ilk değerini kullan
+        setSaatUcreti(parsedList[0] ?? '100')
       }
 
       // Load active officers for dropdown
