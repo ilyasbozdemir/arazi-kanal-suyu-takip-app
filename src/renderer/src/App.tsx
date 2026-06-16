@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import {
   LayoutDashboard,
   Users,
+  User,
   Layers,
   Receipt,
   Save,
@@ -35,6 +36,7 @@ import { Footer } from './components/Footer'
 import { useTabStore } from './store/tabStore'
 import TabsBar from './components/TabsBar'
 import KisiProfil from './components/KisiProfil'
+import Malikler from './components/Malikler'
 
 export default function App(): React.JSX.Element {
   const [filePath, setFilePath] = useState<string | null>(null)
@@ -530,6 +532,16 @@ export default function App(): React.JSX.Element {
                     <Users className="h-3.5 w-3.5" />
                     <span>Sulama Görevlileri</span>
                   </button>
+                  <button
+                    onMouseDown={() => {
+                      addTab('malikler')
+                      setActiveMenu(null)
+                    }}
+                    className={`flex items-center space-x-2 w-full px-3 py-2 text-left rounded-lg transition ${activeTab === 'malikler' ? 'bg-indigo-600 text-white' : 'hover:bg-indigo-600 hover:text-white text-slate-200'}`}
+                  >
+                    <User className="h-3.5 w-3.5 text-indigo-400" />
+                    <span>Malik Listesi</span>
+                  </button>
                   <div className="h-px bg-white/5 my-1"></div>
                   <button
                     onMouseDown={() => {
@@ -812,6 +824,7 @@ export default function App(): React.JSX.Element {
             {activeTab === 'tasinmazlar' && <Tasinmazlar />}
             {activeTab === 'gorevliler' && <Gorevliler />}
             {activeTab === 'ayarlar' && <Ayarlar onSettingsSaved={handleSettingsSaved} />}
+            {activeTab === 'malikler' && <Malikler />}
             {activeTab === 'profil' && activeTabItem?.params?.owner && (
               <KisiProfil ownerName={activeTabItem.params.owner} />
             )}

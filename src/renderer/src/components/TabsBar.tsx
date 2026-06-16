@@ -19,7 +19,8 @@ const tabIcons: Record<TabType, LucideIcon> = {
   tasinmazlar: Layers,
   gorevliler: Users,
   ayarlar: Settings,
-  profil: User
+  profil: User,
+  malikler: Users
 }
 
 export default function TabsBar(): React.JSX.Element {

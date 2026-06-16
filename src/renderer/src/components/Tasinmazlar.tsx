@@ -22,6 +22,8 @@ interface Tasinmaz {
   parsel: string
   alan_m2: number
   mahalle_koy: string
+  mevki?: string
+  su_hakki?: string
   kanal_adi: string
   aciklama: string
 }
@@ -42,6 +44,8 @@ export default function Tasinmazlar(): React.JSX.Element {
   const [parsel, setParsel] = useState('')
   const [alanM2, setAlanM2] = useState('')
   const [mahalleKoy, setMahalleKoy] = useState('')
+  const [mevki, setMevki] = useState('')
+  const [suHakki, setSuHakki] = useState('')
   const [kanalAdi, setKanalAdi] = useState('')
   const [aciklama, setAciklama] = useState('')
 
@@ -62,6 +66,8 @@ export default function Tasinmazlar(): React.JSX.Element {
     parsel: '',
     alan_m2: '',
     mahalle_koy: '',
+    mevki: '',
+    su_hakki: '',
     kanal_adi: '',
     aciklama: ''
   })
@@ -126,13 +132,15 @@ export default function Tasinmazlar(): React.JSX.Element {
       if (editingId) {
         // Update
         await window.api.dbRun(
-          'UPDATE tasinmazlar SET tapu_sahibi = ?, ada = ?, parsel = ?, alan_m2 = ?, mahalle_koy = ?, kanal_adi = ?, aciklama = ? WHERE id = ?',
+          'UPDATE tasinmazlar SET tapu_sahibi = ?, ada = ?, parsel = ?, alan_m2 = ?, mahalle_koy = ?, mevki = ?, su_hakki = ?, kanal_adi = ?, aciklama = ? WHERE id = ?',
           [
             tapuSahibi.trim(),
             ada.trim(),
             parsel.trim(),
             numericAlan,
             mahalleKoy.trim(),
+            mevki.trim(),
+            suHakki.trim(),
             kanalAdi.trim(),
             aciklama.trim(),
             editingId
@@ -141,13 +149,15 @@ export default function Tasinmazlar(): React.JSX.Element {
       } else {
         // Insert
         await window.api.dbRun(
-          'INSERT INTO tasinmazlar (tapu_sahibi, ada, parsel, alan_m2, mahalle_koy, kanal_adi, aciklama) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          'INSERT INTO tasinmazlar (tapu_sahibi, ada, parsel, alan_m2, mahalle_koy, mevki, su_hakki, kanal_adi, aciklama) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
           [
             tapuSahibi.trim(),
             ada.trim(),
             parsel.trim(),
             numericAlan,
             mahalleKoy.trim(),
+            mevki.trim(),
+            suHakki.trim(),
             kanalAdi.trim(),
             aciklama.trim()
           ]
@@ -168,19 +178,21 @@ export default function Tasinmazlar(): React.JSX.Element {
       const row = tasinmazlar.find((t) => t.id === id)
       if (!row) return
 
-      let { tapu_sahibi, ada, parsel, alan_m2, mahalle_koy, kanal_adi, aciklama } = row
+      let { tapu_sahibi, ada, parsel, alan_m2, mahalle_koy, mevki, su_hakki, kanal_adi, aciklama } = row
 
       if (field === 'tapu_sahibi') tapu_sahibi = value
       else if (field === 'ada') ada = value
       else if (field === 'parsel') parsel = value
       else if (field === 'alan_m2') alan_m2 = parseFloat(value) || 0
       else if (field === 'mahalle_koy') mahalle_koy = value
+      else if (field === 'mevki') mevki = value
+      else if (field === 'su_hakki') su_hakki = value
       else if (field === 'kanal_adi') kanal_adi = value
       else if (field === 'aciklama') aciklama = value
 
       await window.api.dbRun(
-        'UPDATE tasinmazlar SET tapu_sahibi = ?, ada = ?, parsel = ?, alan_m2 = ?, mahalle_koy = ?, kanal_adi = ?, aciklama = ? WHERE id = ?',
-        [tapu_sahibi, ada, parsel, alan_m2, mahalle_koy, kanal_adi, aciklama, id]
+        'UPDATE tasinmazlar SET tapu_sahibi = ?, ada = ?, parsel = ?, alan_m2 = ?, mahalle_koy = ?, mevki = ?, su_hakki = ?, kanal_adi = ?, aciklama = ? WHERE id = ?',
+        [tapu_sahibi, ada, parsel, alan_m2, mahalle_koy, mevki, su_hakki, kanal_adi, aciklama, id]
       )
 
       await loadTasinmazlar()
@@ -200,13 +212,15 @@ export default function Tasinmazlar(): React.JSX.Element {
 
     try {
       await window.api.dbRun(
-        'INSERT INTO tasinmazlar (tapu_sahibi, ada, parsel, alan_m2, mahalle_koy, kanal_adi, aciklama) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO tasinmazlar (tapu_sahibi, ada, parsel, alan_m2, mahalle_koy, mevki, su_hakki, kanal_adi, aciklama) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
           newRow.tapu_sahibi.trim(),
           newRow.ada.trim(),
           newRow.parsel.trim(),
           numericAlan,
           newRow.mahalle_koy.trim(),
+          newRow.mevki.trim(),
+          newRow.su_hakki.trim(),
           newRow.kanal_adi.trim(),
           newRow.aciklama.trim()
         ]
@@ -218,6 +232,8 @@ export default function Tasinmazlar(): React.JSX.Element {
         parsel: '',
         alan_m2: '',
         mahalle_koy: '',
+        mevki: '',
+        su_hakki: '',
         kanal_adi: definedChannels.length > 0 ? definedChannels[0] : '',
         aciklama: ''
       })
@@ -236,6 +252,8 @@ export default function Tasinmazlar(): React.JSX.Element {
     setParsel(tasinmaz.parsel || '')
     setAlanM2(tasinmaz.alan_m2?.toString() || '')
     setMahalleKoy(tasinmaz.mahalle_koy || '')
+    setMevki(tasinmaz.mevki || '')
+    setSuHakki(tasinmaz.su_hakki || '')
     setKanalAdi(tasinmaz.kanal_adi || '')
     setAciklama(tasinmaz.aciklama || '')
     setError('')
@@ -265,6 +283,8 @@ export default function Tasinmazlar(): React.JSX.Element {
     setParsel('')
     setAlanM2('')
     setMahalleKoy('')
+    setMevki('')
+    setSuHakki('')
     setKanalAdi(definedChannels.length > 0 ? definedChannels[0] : '')
     setAciklama('')
     setError('')
@@ -432,9 +452,9 @@ export default function Tasinmazlar(): React.JSX.Element {
             {/* Grid Header */}
             <div className="grid grid-cols-12 gap-2 border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider py-3 px-3">
               <div className="col-span-3">Tapu Sahibi</div>
-              <div className="col-span-2">Köy / Mahalle</div>
-              <div className="col-span-2 text-center">Fiş No / Seri No</div>
-              <div className="col-span-2 text-right">Alan (m²)</div>
+              <div className="col-span-2">Köy / Mevki</div>
+              <div className="col-span-2 text-center">Fiş / Seri No</div>
+              <div className="col-span-2 text-right">Alan / Su Hakkı</div>
               <div className="col-span-2">Kanal Adı</div>
               <div className="col-span-1 text-right">İşlemler</div>
             </div>
@@ -494,18 +514,20 @@ export default function Tasinmazlar(): React.JSX.Element {
                           )}
                         </div>
                         <div
-                          className="col-span-2 text-slate-300 truncate pr-2"
-                          title={t.mahalle_koy}
+                          className="col-span-2 truncate pr-2"
+                          title={`${t.mahalle_koy || ''} ${t.mevki ? '/ ' + t.mevki : ''}`}
                         >
-                          {t.mahalle_koy || <span className="text-slate-500">-</span>}
+                          <span className="text-slate-200 block truncate text-xs font-semibold">{t.mahalle_koy || '-'}</span>
+                          {t.mevki && <span className="text-[10px] text-slate-400 block truncate font-medium">{t.mevki}</span>}
                         </div>
                         <div className="col-span-2 text-center text-slate-300 truncate">
                           {t.ada && t.parsel
                             ? `${t.ada} / ${t.parsel}`
                             : t.ada || t.parsel || <span className="text-slate-500">-</span>}
                         </div>
-                        <div className="col-span-2 text-right text-indigo-300 font-medium truncate pr-2">
-                          {t.alan_m2 ? `${t.alan_m2.toLocaleString('tr-TR')} m²` : '-'}
+                        <div className="col-span-2 text-right truncate pr-2">
+                          <span className="text-indigo-300 font-semibold block text-xs">{t.alan_m2 ? `${t.alan_m2.toLocaleString('tr-TR')} m²` : '-'}</span>
+                          {t.su_hakki && <span className="text-[10px] text-cyan-400 font-extrabold block uppercase tracking-wider">{t.su_hakki}</span>}
                         </div>
                         <div className="col-span-2 truncate">
                           {t.kanal_adi ? (
@@ -582,17 +604,23 @@ export default function Tasinmazlar(): React.JSX.Element {
 
             {/* Input Tapu Sahibi */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex justify-between">
-                <span>Tapu Sahibi *</span>
-                <span className="text-[10px] text-slate-500 lowercase normal-case">(Birden fazla ise alt alta yazın)</span>
+              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                Tapu Sahibi / Malik *
               </label>
-              <textarea
-                placeholder="Örn: Mehmet Özkan&#10;Ahmet Yılmaz (Hissedar)"
-                className="w-full px-3 py-2.5 rounded-xl glass-input text-sm font-medium h-16 resize-none"
+              <input
+                type="text"
+                list="owners-autocomplete"
+                placeholder="Örn: Mehmet Özkan"
+                className="w-full px-3 py-2.5 rounded-xl glass-input text-sm font-semibold"
                 value={tapuSahibi}
                 onChange={(e) => setTapuSahibi(e.target.value)}
                 required
               />
+              <datalist id="owners-autocomplete">
+                {Array.from(new Set(tasinmazlar.map((item) => item.tapu_sahibi).filter(Boolean))).map((owner) => (
+                  <option key={owner} value={owner} />
+                ))}
+              </datalist>
             </div>
 
             {/* Grid Fiş No / Seri No */}
@@ -623,34 +651,62 @@ export default function Tasinmazlar(): React.JSX.Element {
               </div>
             </div>
 
-            {/* Input Alan (m2) */}
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                Alan (m²) *
-              </label>
-              <input
-                type="number"
-                step="any"
-                placeholder="Örn: 4500"
-                className="w-full px-3 py-2.5 rounded-xl glass-input text-sm"
-                value={alanM2}
-                onChange={(e) => setAlanM2(e.target.value)}
-                required
-              />
+            {/* Alan & Su Hakkı Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Alan (m²) *
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  placeholder="Örn: 4500"
+                  className="w-full px-3 py-2.5 rounded-xl glass-input text-sm"
+                  value={alanM2}
+                  onChange={(e) => setAlanM2(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Su Hakkı
+                </label>
+                <input
+                  type="text"
+                  placeholder="Örn: 4 Saat"
+                  className="w-full px-3 py-2.5 rounded-xl glass-input text-sm font-semibold text-indigo-300"
+                  value={suHakki}
+                  onChange={(e) => setSuHakki(e.target.value)}
+                />
+              </div>
             </div>
 
-            {/* Input Mahalle / Koy */}
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                Köy / Mahalle
-              </label>
-              <input
-                type="text"
-                placeholder="Örn: Akçaören Köyü"
-                className="w-full px-3 py-2.5 rounded-xl glass-input text-sm"
-                value={mahalleKoy}
-                onChange={(e) => setMahalleKoy(e.target.value)}
-              />
+            {/* Köy/Mahalle & Mevki Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Köy / Mahalle
+                </label>
+                <input
+                  type="text"
+                  placeholder="Örn: Akçaören"
+                  className="w-full px-3 py-2.5 rounded-xl glass-input text-sm"
+                  value={mahalleKoy}
+                  onChange={(e) => setMahalleKoy(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Mevki / Bölge
+                </label>
+                <input
+                  type="text"
+                  placeholder="Örn: Değirmenüstü"
+                  className="w-full px-3 py-2.5 rounded-xl glass-input text-sm"
+                  value={mevki}
+                  onChange={(e) => setMevki(e.target.value)}
+                />
+              </div>
             </div>
 
             {/* Su Kanalı / Kaynağı Selection */}
@@ -667,6 +723,7 @@ export default function Tasinmazlar(): React.JSX.Element {
                 </div>
               ) : definedChannels.length > 1 ? (
                 <select
+                  title="Kanal Seçimi"
                   className="w-full px-3 py-2.5 rounded-xl glass-input text-xs font-medium cursor-pointer"
                   value={kanalAdi}
                   onChange={(e) => setKanalAdi(e.target.value)}
@@ -705,7 +762,7 @@ export default function Tasinmazlar(): React.JSX.Element {
             <div className="flex space-x-2 pt-2">
               <button
                 type="submit"
-                className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition duration-200"
+                className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition duration-200 cursor-pointer"
               >
                 <Save className="h-4.5 w-4.5" />
                 <span>Kaydet</span>
@@ -714,7 +771,7 @@ export default function Tasinmazlar(): React.JSX.Element {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 px-4 rounded-xl transition duration-200"
+                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 px-4 rounded-xl transition duration-200 cursor-pointer"
                 >
                   İptal
                 </button>
@@ -732,8 +789,10 @@ export default function Tasinmazlar(): React.JSX.Element {
             <div className="col-span-1">Fiş No</div>
             <div className="col-span-1">Seri No</div>
             <div className="col-span-1 text-right">Alan (m²)</div>
-            <div className="col-span-2">Mahalle/Köy</div>
-            <div className="col-span-2">Kanal Adı</div>
+            <div className="col-span-1">Mahalle/Köy</div>
+            <div className="col-span-1">Mevki</div>
+            <div className="col-span-1">Su Hakkı</div>
+            <div className="col-span-1">Kanal Adı</div>
             <div className="col-span-2">Açıklama</div>
           </div>
 
@@ -765,6 +824,7 @@ export default function Tasinmazlar(): React.JSX.Element {
                     <div className="col-span-3">
                       <input
                         type="text"
+                        list="owners-autocomplete"
                         className="bg-transparent border border-transparent hover:border-slate-700 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-white"
                         defaultValue={row.tapu_sahibi}
                         onBlur={(e) => updateExcelRow(row.id, 'tapu_sahibi', e.target.value)}
@@ -774,7 +834,7 @@ export default function Tasinmazlar(): React.JSX.Element {
                     <div className="col-span-1">
                       <input
                         type="text"
-                        className="bg-transparent border border-transparent hover:border-slate-700 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-white"
+                        className="bg-transparent border border-transparent hover:border-slate-700 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-white font-mono"
                         defaultValue={row.ada || ''}
                         onBlur={(e) => updateExcelRow(row.id, 'ada', e.target.value)}
                       />
@@ -783,7 +843,7 @@ export default function Tasinmazlar(): React.JSX.Element {
                     <div className="col-span-1">
                       <input
                         type="text"
-                        className="bg-transparent border border-transparent hover:border-slate-700 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-white"
+                        className="bg-transparent border border-transparent hover:border-slate-700 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-white font-mono"
                         defaultValue={row.parsel || ''}
                         onBlur={(e) => updateExcelRow(row.id, 'parsel', e.target.value)}
                       />
@@ -798,7 +858,7 @@ export default function Tasinmazlar(): React.JSX.Element {
                       />
                     </div>
                     {/* mahalle_koy */}
-                    <div className="col-span-2">
+                    <div className="col-span-1">
                       <input
                         type="text"
                         className="bg-transparent border border-transparent hover:border-slate-700 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-white"
@@ -806,10 +866,29 @@ export default function Tasinmazlar(): React.JSX.Element {
                         onBlur={(e) => updateExcelRow(row.id, 'mahalle_koy', e.target.value)}
                       />
                     </div>
+                    {/* mevki */}
+                    <div className="col-span-1">
+                      <input
+                        type="text"
+                        className="bg-transparent border border-transparent hover:border-slate-700 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-slate-300"
+                        defaultValue={row.mevki || ''}
+                        onBlur={(e) => updateExcelRow(row.id, 'mevki', e.target.value)}
+                      />
+                    </div>
+                    {/* su_hakki */}
+                    <div className="col-span-1">
+                      <input
+                        type="text"
+                        className="bg-transparent border border-transparent hover:border-slate-700 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-cyan-300 font-bold"
+                        defaultValue={row.su_hakki || ''}
+                        onBlur={(e) => updateExcelRow(row.id, 'su_hakki', e.target.value)}
+                      />
+                    </div>
                     {/* kanal_adi */}
-                    <div className="col-span-2">
+                    <div className="col-span-1">
                       <select
-                        className="bg-transparent border border-transparent hover:border-slate-700 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-white"
+                        title="Kanal Seçimi"
+                        className="bg-transparent border border-transparent hover:border-slate-700 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-white cursor-pointer"
                         defaultValue={row.kanal_adi || ''}
                         onChange={(e) => updateExcelRow(row.id, 'kanal_adi', e.target.value)}
                       >
@@ -829,7 +908,7 @@ export default function Tasinmazlar(): React.JSX.Element {
                       />
                       <button
                         onClick={() => handleDelete(row.id, row.tapu_sahibi)}
-                        className="p-1.5 text-rose-400 hover:bg-rose-500/20 rounded opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                        className="p-1.5 text-rose-400 hover:bg-rose-500/20 rounded opacity-0 group-hover:opacity-100 transition-opacity shrink-0 cursor-pointer"
                         title="Sil"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -842,13 +921,14 @@ export default function Tasinmazlar(): React.JSX.Element {
           </div>
 
           {/* New Row Area */}
-          <div className="bg-slate-900 border-t border-slate-700/50 p-2 shadow-2xl z-10">
-            <div className="grid grid-cols-12 gap-2 items-center">
+          <div className="bg-slate-900 border-t border-slate-700/50 p-2 shadow-2xl z-10 shrink-0">
+            <div className="grid grid-cols-12 gap-1.5 items-center">
               <div className="col-span-3">
                 <input
                   type="text"
+                  list="owners-autocomplete"
                   placeholder="Yeni Tapu Sahibi..."
-                  className="bg-slate-950 border border-indigo-500/30 focus:border-indigo-500 rounded px-2 py-1.5 w-full text-xs text-white"
+                  className="bg-slate-950 border border-indigo-500/30 focus:border-indigo-500 rounded px-2 py-1.5 w-full text-xs text-white font-semibold"
                   value={newRow.tapu_sahibi}
                   onChange={(e) => setNewRow({ ...newRow, tapu_sahibi: e.target.value })}
                 />
@@ -857,7 +937,7 @@ export default function Tasinmazlar(): React.JSX.Element {
                 <input
                   type="text"
                   placeholder="Ada"
-                  className="bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded px-2 py-1.5 w-full text-xs text-white"
+                  className="bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded px-2 py-1.5 w-full text-xs text-white font-mono"
                   value={newRow.ada}
                   onChange={(e) => setNewRow({ ...newRow, ada: e.target.value })}
                 />
@@ -866,7 +946,7 @@ export default function Tasinmazlar(): React.JSX.Element {
                 <input
                   type="text"
                   placeholder="Parsel"
-                  className="bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded px-2 py-1.5 w-full text-xs text-white"
+                  className="bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded px-2 py-1.5 w-full text-xs text-white font-mono"
                   value={newRow.parsel}
                   onChange={(e) => setNewRow({ ...newRow, parsel: e.target.value })}
                 />
@@ -875,23 +955,42 @@ export default function Tasinmazlar(): React.JSX.Element {
                 <input
                   type="number"
                   placeholder="Alan m²"
-                  className="bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded px-2 py-1.5 w-full text-xs text-right text-indigo-300"
+                  className="bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded px-2 py-1.5 w-full text-xs text-right text-indigo-300 font-semibold"
                   value={newRow.alan_m2}
                   onChange={(e) => setNewRow({ ...newRow, alan_m2: e.target.value })}
                 />
               </div>
-              <div className="col-span-2">
+              <div className="col-span-1">
                 <input
                   type="text"
-                  placeholder="Mahalle/Köy"
+                  placeholder="Mahalle"
                   className="bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded px-2 py-1.5 w-full text-xs text-white"
                   value={newRow.mahalle_koy}
                   onChange={(e) => setNewRow({ ...newRow, mahalle_koy: e.target.value })}
                 />
               </div>
-              <div className="col-span-2">
+              <div className="col-span-1">
+                <input
+                  type="text"
+                  placeholder="Mevki"
+                  className="bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded px-2 py-1.5 w-full text-xs text-slate-300"
+                  value={newRow.mevki}
+                  onChange={(e) => setNewRow({ ...newRow, mevki: e.target.value })}
+                />
+              </div>
+              <div className="col-span-1">
+                <input
+                  type="text"
+                  placeholder="Su Hakkı"
+                  className="bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded px-2 py-1.5 w-full text-xs text-cyan-300 font-bold"
+                  value={newRow.su_hakki}
+                  onChange={(e) => setNewRow({ ...newRow, su_hakki: e.target.value })}
+                />
+              </div>
+              <div className="col-span-1">
                 <select
-                  className="bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded px-2 py-1.5 w-full text-xs text-white"
+                  title="Kanal Seçimi"
+                  className="bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded px-2 py-1.5 w-full text-xs text-white cursor-pointer"
                   value={newRow.kanal_adi}
                   onChange={(e) => setNewRow({ ...newRow, kanal_adi: e.target.value })}
                 >
@@ -914,7 +1013,7 @@ export default function Tasinmazlar(): React.JSX.Element {
                 />
                 <button
                   onClick={handleAddExcelRow}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white rounded px-3 py-1.5 flex items-center justify-center transition shrink-0 shadow-lg"
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white rounded px-3 py-1.5 flex items-center justify-center transition shrink-0 shadow-lg cursor-pointer"
                   title="Ekle (Enter)"
                 >
                   <Plus className="w-4 h-4" />

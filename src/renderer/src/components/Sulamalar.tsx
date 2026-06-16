@@ -995,6 +995,43 @@ export default function Sulamalar({
                 </div>
               )}
 
+              {/* Top/Batch Settings: Supervisor & Date */}
+              <div className="grid grid-cols-2 gap-3 pb-3 border-b border-slate-800/60 bg-indigo-950/15 p-3.5 rounded-xl">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-indigo-300 uppercase tracking-wider block">
+                    Sulama Sorumlusu (Merav) *
+                  </label>
+                  <select
+                    title="Görevli Seçimi"
+                    className="w-full px-2 py-1.5 rounded-lg bg-slate-900 border border-indigo-500/30 text-xs font-bold text-slate-200 outline-none focus:border-indigo-400 transition cursor-pointer"
+                    value={gorevliId}
+                    onChange={(e) => setGorevliId(e.target.value)}
+                    required
+                  >
+                    <option className="bg-slate-950 text-slate-400 text-xs" value="">
+                      -- Görevli Seçin --
+                    </option>
+                    {gorevliler.map((g) => (
+                      <option key={g.id} className="bg-slate-950 text-slate-200 text-xs" value={g.id}>
+                        {g.ad_soyad}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-indigo-300 uppercase tracking-wider block">
+                    Tarih *
+                  </label>
+                  <input
+                    type="date"
+                    className="w-full px-2 py-1.5 rounded-lg bg-slate-900 border border-indigo-500/30 text-xs font-bold text-slate-200 outline-none focus:border-indigo-400 transition"
+                    value={sulamaTarihi}
+                    onChange={(e) => setSulamaTarihi(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
               {/* Hızlı Malik / Fiş Arama */}
               <div className="space-y-1 pb-3 border-b border-slate-800/60">
                 <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider block">
@@ -1035,42 +1072,6 @@ export default function Sulamalar({
                 </datalist>
               </div>
 
-              {/* Top/Batch Settings: Supervisor & Date */}
-              <div className="grid grid-cols-2 gap-3 pb-3 border-b border-slate-800/60 bg-indigo-950/15 p-3.5 rounded-xl">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-indigo-300 uppercase tracking-wider block">
-                    Sulama Sorumlusu (Merav) *
-                  </label>
-                  <select
-                    className="w-full px-2 py-1.5 rounded-lg bg-slate-900 border border-indigo-500/30 text-xs font-bold text-slate-200 outline-none focus:border-indigo-400 transition"
-                    value={gorevliId}
-                    onChange={(e) => setGorevliId(e.target.value)}
-                    required
-                  >
-                    <option className="bg-slate-950 text-slate-400 text-xs" value="">
-                      -- Görevli Seçin --
-                    </option>
-                    {gorevliler.map((g) => (
-                      <option key={g.id} className="bg-slate-950 text-slate-200 text-xs" value={g.id}>
-                        {g.ad_soyad}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-indigo-300 uppercase tracking-wider block">
-                    Tarih *
-                  </label>
-                  <input
-                    type="date"
-                    className="w-full px-2 py-1.5 rounded-lg bg-slate-900 border border-indigo-500/30 text-xs font-bold text-slate-200 outline-none focus:border-indigo-400 transition"
-                    value={sulamaTarihi}
-                    onChange={(e) => setSulamaTarihi(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
               {/* Fiş No - Seri No Giriş */}
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider flex items-center gap-1.5">
@@ -1100,12 +1101,18 @@ export default function Sulamalar({
                 </label>
                 <input
                   type="text"
+                  list="sulamalar-owners-autocomplete"
                   className="w-full px-3 py-2.5 rounded-xl glass-input text-xs font-bold"
                   placeholder="Örn: Ahmet Yılmaz"
                   value={malikGiris}
                   onChange={(e) => setMalikGiris(e.target.value)}
                   required
                 />
+                <datalist id="sulamalar-owners-autocomplete">
+                  {Array.from(new Set(tasinmazlar.map(t => t.tapu_sahibi).filter(Boolean))).map(owner => (
+                    <option key={owner} value={owner} />
+                  ))}
+                </datalist>
               </div>
 
               {/* Debt & History Compact Summary */}
@@ -1256,6 +1263,39 @@ export default function Sulamalar({
                   onChange={(e) => setAciklama(e.target.value)}
                 />
               </div>
+
+              {/* Selected Merav's Slips for Selected Date */}
+              {gorevliId && (
+                <div className="mt-4 p-3 rounded-xl bg-slate-900/60 border border-white/5 space-y-2">
+                  <div className="flex justify-between items-center text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                    <span>Sorumlu Merav'ın Seçili Tarihteki Fişleri ({sulamalar.filter((s) => s.gorevli_id.toString() === gorevliId && s.sulama_tarihi === sulamaTarihi).length} Kayıt)</span>
+                  </div>
+                  {sulamalar.filter((s) => s.gorevli_id.toString() === gorevliId && s.sulama_tarihi === sulamaTarihi).length === 0 ? (
+                    <div className="text-[10px] text-slate-500 italic py-1">Bu tarihte girilen fiş bulunmuyor.</div>
+                  ) : (
+                    <div className="max-h-28 overflow-y-auto space-y-1 pr-1 scrollbar-thin">
+                      {sulamalar
+                        .filter((s) => s.gorevli_id.toString() === gorevliId && s.sulama_tarihi === sulamaTarihi)
+                        .map((slip) => (
+                          <div key={slip.id} className="flex justify-between items-center text-[10px] bg-slate-950/40 p-1.5 rounded-lg border border-white/5">
+                            <span className="text-slate-300 font-semibold truncate max-w-[120px]" title={slip.tapu_sahibi}>
+                              {slip.tapu_sahibi}
+                            </span>
+                            <span className="text-slate-450 font-mono text-[9px]">
+                              {slip.ada || '-'}-{slip.parsel || '-'}
+                            </span>
+                            <div className="flex items-center space-x-1.5 font-bold">
+                              <span className="text-slate-200">₺{slip.ucret}</span>
+                              <span className={`px-1 py-0.5 rounded text-[8px] uppercase ${
+                                slip.odeme_durumu === 'Ödendi' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
+                              }`}>{slip.odeme_durumu}</span>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Submit / Cancel Buttons */}
               <div className="flex space-x-2 pt-2">

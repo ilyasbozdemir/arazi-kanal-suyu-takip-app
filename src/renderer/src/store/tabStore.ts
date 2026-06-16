@@ -8,6 +8,7 @@ export type TabType =
   | 'ayarlar'
   | 'odemeler'
   | 'profil'
+  | 'malikler'
 
 export interface TabItem {
   key: string // unique key, e.g. "dashboard", "profil:Ahmet Yılmaz"
@@ -41,6 +42,8 @@ export function getTabLabel(id: TabType): string {
       return 'Sistem Ayarları'
     case 'profil':
       return 'Kişi Profili'
+    case 'malikler':
+      return 'Malik Listesi'
     default:
       return 'Sekme'
   }

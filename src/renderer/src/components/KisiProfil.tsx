@@ -37,6 +37,8 @@ interface Property {
   mahalle_koy: string
   kanal_adi: string
   aciklama?: string
+  mevki?: string
+  su_hakki?: string
 }
 
 // Reuse print layout function for individual slips
@@ -369,16 +371,23 @@ export default function KisiProfil({ ownerName }: KisiProfilProps): React.JSX.El
               {properties.map((p) => (
                 <div key={p.id} className="p-3 bg-slate-900/40 border border-white/5 rounded-xl space-y-1.5">
                   <div className="flex justify-between items-center text-xs font-bold text-white">
-                    <span className="font-mono text-indigo-300">Fiş No: {p.ada}-{p.parsel}</span>
-                    <span className="text-[10px] text-slate-400 font-sans">{p.mahalle_koy || 'Bilinmeyen Mahalle'}</span>
+                    <span className="font-mono text-indigo-300">Ada/Parsel: {p.ada}-{p.parsel}</span>
+                    <span className="text-[10px] text-slate-400 font-sans">
+                      {p.mahalle_koy || 'Bilinmeyen Mahalle'}{p.mevki ? ` (${p.mevki})` : ''}
+                    </span>
                   </div>
-                  <div className="flex justify-between text-[10px] text-slate-500">
+                  <div className="flex justify-between text-[10px] text-slate-500 flex-wrap gap-y-1">
                     <span className="flex items-center gap-1">
                       <MapPin className="h-3 w-3 text-slate-600" />
                       Kanal: {p.kanal_adi || '-'}
                     </span>
                     <span>Alan: {p.alan_m2 > 0 ? `${p.alan_m2} m²` : '-'}</span>
                   </div>
+                  {p.su_hakki && (
+                    <div className="text-[9px] text-cyan-400 font-bold bg-cyan-500/10 px-1.5 py-0.5 rounded w-fit uppercase tracking-wider">
+                      Su Hakkı: {p.su_hakki}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -547,9 +556,42 @@ export default function KisiProfil({ ownerName }: KisiProfilProps): React.JSX.El
                     <strong>Sayın:</strong> {ownerName}
                   </p>
                   <p>
-                    Arazilerinizde gerçekleştirilen tarımsal sulama işlemlerine ait ödenmiş/ödenmemiş tüm kayıtlarınızın dökümü ve ödeme durumları aşağıda sunulmuştur.
+                    Arazilerinizde gerçekleştirilen tarımsal sulama işlemlerine ait ödenmiş/ödenmemiş tüm kayıtlarınızın dökümü, ödeme durumları ve kayıtlı taşınmaz varlığınız aşağıda sunulmuştur.
                   </p>
                 </div>
+
+                {/* Registered Properties Table in Printout */}
+                {properties.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="text-xs font-bold text-slate-800 border-b border-black pb-1 uppercase tracking-wider">Kayıtlı Taşınmaz Varlığı</h3>
+                    <table className="w-full text-left border-collapse text-[10px] border border-slate-300">
+                      <thead>
+                        <tr className="border-b border-black font-bold bg-slate-150">
+                          <th className="p-1.5 border border-slate-350">Ada/Parsel</th>
+                          <th className="p-1.5 border border-slate-350">Mahalle/Köy</th>
+                          <th className="p-1.5 border border-slate-350">Mevki</th>
+                          <th className="p-1.5 border border-slate-350 text-right">Alan (m²)</th>
+                          <th className="p-1.5 border border-slate-350">Kanal Adı</th>
+                          <th className="p-1.5 border border-slate-350">Su Hakkı</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {properties.map((p) => (
+                          <tr key={p.id} className="border-b border-slate-300">
+                            <td className="p-1.5 border border-slate-300 font-mono">{p.ada || '-'}-{p.parsel || '-'}</td>
+                            <td className="p-1.5 border border-slate-300">{p.mahalle_koy || '-'}</td>
+                            <td className="p-1.5 border border-slate-300">{p.mevki || '-'}</td>
+                            <td className="p-1.5 border border-slate-300 text-right">{p.alan_m2 > 0 ? p.alan_m2.toLocaleString('tr-TR') : '-'}</td>
+                            <td className="p-1.5 border border-slate-300">{p.kanal_adi || '-'}</td>
+                            <td className="p-1.5 border border-slate-300 font-bold">{p.su_hakki || '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                <h3 className="text-xs font-bold text-slate-800 border-b border-black pb-1 uppercase tracking-wider pt-2">Sulama ve Fiş Kayıtları Dökümü</h3>
 
                 {/* Table */}
                 <table className="w-full text-left border-collapse text-[10px] my-4 border border-slate-350">
