@@ -1,0 +1,379 @@
+@import "tailwindcss";
+
+/* System font stack — no external Google Fonts to avoid CSP violation */
+
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  
+  /* ═══════════════════════════════════════════
+     DARK THEME — Pure Black
+     ═══════════════════════════════════════════ */
+  --primary-100: #38bdf8;
+  --primary-200: #0284c7;
+  --primary-300: #0369a1;
+  --accent-100: #00668c;
+  --accent-200: #71c4ef;
+  --text-100: #ffffff;
+  --text-200: #e5e7eb;
+  --bg-100: #000000;
+  --bg-200: #0a0a0a;
+  --bg-300: #171717;
+
+  /* UI variables */
+  --background: #000000;
+  --text-primary: #ffffff;
+  --text-secondary: #d1d5db;
+  --text-muted: #9ca3af;
+  
+  --panel-bg: #0a0a0a;
+  --card-bg: #111111;
+  --card-hover-bg: #1a1a1a;
+  --input-bg: #0a0a0a;
+  --border: rgba(255, 255, 255, 0.12);
+  --border-card: rgba(255, 255, 255, 0.08);
+  --border-focus: #ffffff;
+
+  /* Menu bar */
+  --menubar-bg: #0a0a0a;
+  --menubar-text: #d1d5db;
+  --menubar-text-hover: #ffffff;
+  --menubar-active-bg: rgba(255, 255, 255, 0.1);
+  --dropdown-bg: #111111;
+  --dropdown-border: rgba(255, 255, 255, 0.1);
+  --dropdown-hover-bg: #4f46e5;
+  --dropdown-hover-text: #ffffff;
+  --dropdown-text: #e5e7eb;
+  --dropdown-separator: rgba(255, 255, 255, 0.06);
+  --breadcrumb-bg: rgba(0, 0, 0, 0.5);
+
+  /* Modal */
+  --modal-backdrop: rgba(0, 0, 0, 0.85);
+  --modal-bg: #111111;
+  --modal-border: rgba(255, 255, 255, 0.1);
+  --modal-card-bg: #1a1a1a;
+}
+
+:root.light {
+  /* ═══════════════════════════════════════════
+     LIGHT THEME — Pure White
+     ═══════════════════════════════════════════ */
+  --primary-100: #d4eaf7;
+  --primary-200: #e2e8f0;
+  --primary-300: #3b3c3d;
+  --accent-100: #71c4ef;
+  --accent-200: #00668c;
+  --text-100: #000000;
+  --text-200: #171717;
+  --bg-100: #ffffff;
+  --bg-200: #fafafa;
+  --bg-300: #e5e5e5;
+
+  /* UI variables */
+  --background: #ffffff;
+  --text-primary: #000000;
+  --text-secondary: #333333;
+  --text-muted: #666666;
+  
+  --panel-bg: #ffffff;
+  --card-bg: #fafafa;
+  --card-hover-bg: #f5f5f5;
+  --input-bg: #ffffff;
+  --border: rgba(0, 0, 0, 0.15);
+  --border-card: rgba(0, 0, 0, 0.08);
+  --border-focus: #000000;
+
+  /* Menu bar */
+  --menubar-bg: #f5f5f5;
+  --menubar-text: #333333;
+  --menubar-text-hover: #000000;
+  --menubar-active-bg: rgba(0, 0, 0, 0.08);
+  --dropdown-bg: #ffffff;
+  --dropdown-border: rgba(0, 0, 0, 0.12);
+  --dropdown-hover-bg: #4f46e5;
+  --dropdown-hover-text: #ffffff;
+  --dropdown-text: #1a1a1a;
+  --dropdown-separator: rgba(0, 0, 0, 0.06);
+  --breadcrumb-bg: rgba(250, 250, 250, 0.8);
+
+  /* Modal */
+  --modal-backdrop: rgba(0, 0, 0, 0.5);
+  --modal-bg: #ffffff;
+  --modal-border: rgba(0, 0, 0, 0.12);
+  --modal-card-bg: #f5f5f5;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--background);
+  color: var(--text-primary);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.2);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.4);
+}
+
+/* Glassmorphism utilities */
+.glass-panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
+.glass-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-card);
+  transition: background-color 0.25s ease, border-color 0.25s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.glass-card:hover {
+  background: var(--card-hover-bg);
+  border-color: rgba(99, 102, 241, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.15);
+}
+
+.glass-input {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  transition: all 0.25s ease;
+}
+
+.glass-input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+/* ═══════════════════════════════════════════
+   EXHAUSTIVE LIGHT MODE OVERRIDES
+   Override all hardcoded Tailwind dark classes
+   ═══════════════════════════════════════════ */
+.light .text-white {
+  color: var(--text-primary);
+}
+
+.light .text-slate-100 {
+  color: var(--text-primary);
+}
+
+.light .text-slate-200 {
+  color: var(--text-primary);
+}
+
+.light .text-slate-300 {
+  color: var(--text-secondary);
+}
+
+.light .text-slate-400 {
+  color: var(--text-muted);
+}
+
+.light .text-slate-500 {
+  color: var(--text-muted);
+}
+
+/* Force white text on colored buttons/badges in light mode */
+.light .bg-indigo-600,
+.light .bg-indigo-600 *,
+.light .bg-rose-600,
+.light .bg-rose-600 *,
+.light .bg-rose-500,
+.light .bg-rose-500 *,
+.light .bg-emerald-600,
+.light .bg-emerald-600 *,
+.light .bg-emerald-500,
+.light .bg-emerald-500 *,
+.light .bg-amber-500,
+.light .bg-amber-500 *,
+.light .bg-gradient-to-r,
+.light .bg-gradient-to-r *,
+.light .bg-gradient-to-br,
+.light .bg-gradient-to-br * {
+  color: #ffffff !important;
+}
+
+.light .bg-slate-900\/40 {
+  background-color: var(--input-bg) !important;
+  border: 1px solid var(--border) !important;
+}
+
+.light .bg-slate-950 {
+  background-color: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+.light .bg-slate-950\/20 {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+.light select option {
+  background-color: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+.light .border-slate-800 {
+  border-color: var(--border) !important;
+}
+
+.light .border-slate-800\/50 {
+  border-color: var(--border-card) !important;
+}
+
+.light .bg-indigo-950\/20 {
+  background-color: rgba(99, 102, 241, 0.05) !important;
+  border-color: rgba(99, 102, 241, 0.15) !important;
+}
+
+.light .bg-slate-900\/50 {
+  background-color: var(--panel-bg) !important;
+  border-color: var(--border) !important;
+}
+
+.light .bg-slate-800 {
+  background-color: var(--card-bg) !important;
+  color: var(--text-secondary) !important;
+}
+
+.light .bg-slate-850 {
+  background-color: var(--card-bg) !important;
+  color: var(--text-secondary) !important;
+}
+
+.light .bg-slate-900 {
+  background-color: var(--panel-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+.light .bg-slate-900\/60 {
+  background-color: var(--menubar-bg) !important;
+}
+
+.light .bg-slate-950\/40 {
+  background-color: var(--menubar-bg) !important;
+}
+
+.light .bg-slate-900\/10 {
+  background-color: var(--breadcrumb-bg) !important;
+}
+
+.light .bg-slate-950\/80 {
+  background-color: var(--modal-backdrop) !important;
+}
+
+.light .bg-slate-950\/45 {
+  background-color: var(--modal-card-bg) !important;
+}
+
+/* Border overrides */
+.light .border-white\/5 {
+  border-color: var(--border) !important;
+}
+
+.light .border-white\/10 {
+  border-color: var(--border) !important;
+}
+
+.light .bg-white\/5 {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+.light .bg-white\/10 {
+  background-color: var(--menubar-active-bg) !important;
+}
+
+.light .bg-white\/5 {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Divider lines */
+.light .bg-white\/5 {
+  background-color: var(--dropdown-separator) !important;
+}
+
+/* Hover States Overrides */
+.light .hover\:bg-white\/5:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+.light .hover\:text-white:hover {
+  color: var(--text-primary) !important;
+}
+
+.light .hover\:text-slate-100:hover {
+  color: var(--text-primary) !important;
+}
+
+.light .hover\:text-slate-200:hover {
+  color: var(--text-primary) !important;
+}
+
+.light .hover\:bg-slate-800\/20:hover {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+.light .hover\:bg-slate-800\/10:hover {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+.light .hover\:bg-slate-700:hover {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+.light .hover\:bg-slate-750:hover {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+.light .hover\:bg-slate-900:hover {
+  background-color: var(--card-hover-bg) !important;
+}
+
+.light .hover\:bg-indigo-950\/20:hover {
+  background-color: rgba(99, 102, 241, 0.06) !important;
+}
+
+.light .hover\:border-indigo-500\/30:hover {
+  border-color: rgba(99, 102, 241, 0.3) !important;
+}
+
+.light .hover\:border-white\/10:hover {
+  border-color: var(--border) !important;
+}
+
+/* Custom print styles */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+}
