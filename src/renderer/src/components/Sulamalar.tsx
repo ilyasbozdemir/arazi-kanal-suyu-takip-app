@@ -650,11 +650,11 @@ export default function Sulamalar({
                             {new Date(s.sulama_tarihi).toLocaleDateString('tr-TR')}
                           </div>
                           <div className="col-span-3 truncate pr-2">
-                            <span
-                              className="font-semibold text-white block truncate"
-                              title={s.tapu_sahibi}
-                            >
-                              {s.tapu_sahibi}
+                            <span className="font-semibold text-white block truncate" title={s.tapu_sahibi}>
+                              {s.tapu_sahibi.replace(/\n/g, ', ')}
+                              {(s.tapu_sahibi.includes(',') || s.tapu_sahibi.includes('\n')) && (
+                                <span className="ml-1.5 text-[9px] font-bold bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded-full uppercase tracking-wider align-middle">Hisseli</span>
+                              )}
                             </span>
                             <span className="text-xs text-slate-450 block truncate">
                               {s.mahalle_koy} | {s.ada}-{s.parsel}

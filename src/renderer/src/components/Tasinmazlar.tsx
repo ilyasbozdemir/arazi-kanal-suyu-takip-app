@@ -338,7 +338,10 @@ export default function Tasinmazlar(): React.JSX.Element {
                             className="font-semibold text-white block truncate"
                             title={t.tapu_sahibi}
                           >
-                            {t.tapu_sahibi}
+                            {t.tapu_sahibi.replace(/\n/g, ', ')}
+                            {(t.tapu_sahibi.includes(',') || t.tapu_sahibi.includes('\n')) && (
+                              <span className="ml-1.5 text-[9px] font-bold bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded-full uppercase tracking-wider align-middle">Hisseli</span>
+                            )}
                           </span>
                           {t.aciklama && (
                             <span
@@ -425,13 +428,13 @@ export default function Tasinmazlar(): React.JSX.Element {
 
             {/* Input Tapu Sahibi */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                Tapu Sahibi *
+              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex justify-between">
+                <span>Tapu Sahibi *</span>
+                <span className="text-[10px] text-slate-500 lowercase normal-case">(Birden fazla ise alt alta yazın)</span>
               </label>
-              <input
-                type="text"
-                placeholder="Örn: Mehmet Özkan"
-                className="w-full px-3 py-2.5 rounded-xl glass-input text-sm font-medium"
+              <textarea
+                placeholder="Örn: Mehmet Özkan&#10;Ahmet Yılmaz (Hissedar)"
+                className="w-full px-3 py-2.5 rounded-xl glass-input text-sm font-medium h-16 resize-none"
                 value={tapuSahibi}
                 onChange={(e) => setTapuSahibi(e.target.value)}
                 required
