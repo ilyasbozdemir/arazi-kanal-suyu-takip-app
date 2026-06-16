@@ -128,14 +128,12 @@ const renderA5ReceiptContent = (s: any, logo: string | null, name: string) => {
 
       <div className="grid grid-cols-2 gap-4 pt-6 text-center text-[10px]">
         <div>
-          <span className="block font-bold text-slate-800">Teslim Eden (Merav)</span>
-          <span className="block text-[8px] text-slate-500 mt-0.5">{s.ad_soyad}</span>
+          <span className="block font-bold text-slate-800">Teslim Eden</span>
           <span className="block h-10"></span>
           <span className="block border-t border-slate-400 w-24 mx-auto pt-1 text-slate-500 text-[8px]">İmza</span>
         </div>
         <div>
-          <span className="block font-bold text-slate-800">Teslim Alan (Malik)</span>
-          <span className="block text-[8px] text-slate-500 mt-0.5">{s.tapu_sahibi || s.ownerName}</span>
+          <span className="block font-bold text-slate-800">Teslim Alan</span>
           <span className="block h-10"></span>
           <span className="block border-t border-slate-400 w-24 mx-auto pt-1 text-slate-500 text-[8px]">İmza</span>
         </div>

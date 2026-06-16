@@ -361,7 +361,7 @@ export default function Dashboard(): React.JSX.Element {
             <h3 className="text-lg font-bold text-white mb-1">Bugünün Fiş Girişleri</h3>
             <p className="text-xs text-slate-400 mb-4">Bugün sisteme kaydedilen tüm sulama fişleri.</p>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-h-60 overflow-y-auto pr-1 scrollbar-thin">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider">
@@ -419,7 +419,7 @@ export default function Dashboard(): React.JSX.Element {
             <h3 className="text-lg font-bold text-white mb-1">Son Fiş Girişleri</h3>
             <p className="text-xs text-slate-400 mb-4">Sisteme kaydedilen son 5 sulama kaydı.</p>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-h-60 overflow-y-auto pr-1 scrollbar-thin">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider">
