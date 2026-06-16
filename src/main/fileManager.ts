@@ -211,10 +211,13 @@ export async function createNewFile(win: BrowserWindow): Promise<{ success: bool
     // 3. Connect DB (which automatically runs migrations on empty DB)
     connectDatabase(tempDbPath!)
 
-    // 4. Create initial ZIP package
+    // 4. Create initial ZIP package and add signature
     const zip = new AdmZip()
     zip.addLocalFile(tempDbPath!)
-    zip.writeZip(targetPath)
+    
+    const zipBuffer = zip.toBuffer()
+    const signature = Buffer.from('asut', 'utf8')
+    fs.writeFileSync(targetPath, Buffer.concat([signature, zipBuffer]))
 
     activeFilePath = targetPath
     isDirty = false
@@ -253,8 +256,20 @@ export async function openFile(win: BrowserWindow, pathToCheck?: string): Promis
     // 2. Setup temp path
     ensureTempPath()
 
-    // 3. Unpack database from ZIP
-    const zip = new AdmZip(targetPath)
+    // 3. Check signature and unpack database from ZIP buffer
+    let fileBuffer = fs.readFileSync(targetPath)
+    const signature = Buffer.from('asut', 'utf8')
+    const zipSignature = Buffer.from('PK\x03\x04', 'ascii')
+
+    if (fileBuffer.subarray(0, 4).equals(signature)) {
+      // Modern signed .asut file
+      fileBuffer = fileBuffer.subarray(4)
+    } else if (!fileBuffer.subarray(0, 4).equals(zipSignature)) {
+      // Invalid format
+      throw new Error('Dosya formatı geçersiz: .asut imzası eksik veya dosya bozuk.')
+    }
+
+    const zip = new AdmZip(fileBuffer)
     const entries = zip.getEntries()
     const dbEntry = entries.find((e) => e.entryName === 'data.db')
 
@@ -288,7 +303,10 @@ export async function saveFile(): Promise<{ success: boolean; error?: string }> 
   try {
     const zip = new AdmZip()
     zip.addLocalFile(tempDbPath)
-    zip.writeZip(activeFilePath)
+    
+    const zipBuffer = zip.toBuffer()
+    const signature = Buffer.from('asut', 'utf8')
+    fs.writeFileSync(activeFilePath, Buffer.concat([signature, zipBuffer]))
 
     isDirty = false
     return { success: true }

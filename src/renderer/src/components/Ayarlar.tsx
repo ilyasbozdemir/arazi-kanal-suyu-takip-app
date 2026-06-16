@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Save, Image, Moon, Sun, Building, Trash2, CheckCircle2, Mail, Lock, Server, Play, X } from 'lucide-react'
+import { Save, Image, Moon, Sun, Building, Trash2, CheckCircle2, Mail, Lock, Server, Play, X, Download, Upload } from 'lucide-react'
 
 interface AyarlarProps {
   onSettingsSaved: (settings: { name: string; logo: string | null; theme: string }) => void
@@ -199,6 +199,54 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
     }
   }
 
+  const handleExportSmtpTemplate = () => {
+    const template = {
+      smtp_host: "[SMTP_ADDRESS]",
+      smtp_port: "[PORT]",
+      smtp_user: "[EMAIL_ADDRESS]",
+      smtp_pass: "[PASSWORD]",
+      smtp_secure: "[SECURE_CONNECTION_TYPE]",
+      backup_email: "[EMAIL_ADDRESS]"
+    }
+    const blob = new Blob([JSON.stringify(template, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'asut_smtp_sablonu.json'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  const handleImportSmtpTemplate = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target?.result as string)
+        if (data.smtp_host && data.smtp_host !== '[SMTP_ADDRESS]') setSmtpHost(data.smtp_host)
+        if (data.smtp_port && data.smtp_port !== '[PORT]') setSmtpPort(data.smtp_port.toString())
+        if (data.smtp_user && data.smtp_user !== '[EMAIL_ADDRESS]') setSmtpUser(data.smtp_user)
+        if (data.smtp_pass && data.smtp_pass !== '[PASSWORD]') setSmtpPass(data.smtp_pass)
+        if (data.backup_email && data.backup_email !== '[EMAIL_ADDRESS]') setSmtpTo(data.backup_email)
+        
+        if (data.smtp_host && data.smtp_host !== '[SMTP_ADDRESS]') {
+          setSmtpEnabled(1)
+        }
+        
+        setSuccessMsg('SMTP şablonu başarıyla içe aktarıldı, kaydetmeyi unutmayın.')
+        setTimeout(() => setSuccessMsg(''), 4000)
+      } catch (err) {
+        alert('Hatalı şablon dosyası! Lütfen geçerli bir JSON şablonu yükleyin.')
+      }
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
+
   return (
     <div className="space-y-6 max-w-2xl pb-12">
       {/* Header */}
@@ -256,7 +304,7 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
             <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Fiş Giriş Yöntemi</h3>
             <p className="text-xs text-slate-500">Sulamalar ekranında kayıt yaparken mülk/kişi seçiminin nasıl yapılacağını belirleyin.</p>
             
-            <div className="flex space-x-3">
+            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
               <button
                 type="button"
                 onClick={() => setFisGirisYontemi('liste')}
@@ -266,7 +314,7 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
                     : 'bg-slate-900/40 border-white/5 text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <span>Açılır Listeden Seç</span>
+                <span>1 - Taşınmaza Göre (Açılır Liste)</span>
               </button>
 
               <button
@@ -278,7 +326,7 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
                     : 'bg-slate-900/40 border-white/5 text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <span>Ada-Parsel (Hızlı Giriş)</span>
+                <span>2 - Su Bekçisinden Gelen Fişe Göre (Ada-Parsel Örn: 202-5)</span>
               </button>
             </div>
           </div>
@@ -515,7 +563,7 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
                 </div>
 
                 {/* Test Action */}
-                <div className="pt-2">
+                <div className="pt-2 flex flex-wrap gap-3">
                   <button
                     type="button"
                     onClick={handleTestSmtp}
@@ -531,6 +579,26 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
                       </>
                     )}
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={handleExportSmtpTemplate}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-white/10 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Download className="h-3 w-3" />
+                    <span>Şablon İndir</span>
+                  </button>
+
+                  <label className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-white/10 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+                    <Upload className="h-3 w-3" />
+                    <span>Şablondan İçe Aktar</span>
+                    <input
+                      type="file"
+                      accept=".json"
+                      className="hidden"
+                      onChange={handleImportSmtpTemplate}
+                    />
+                  </label>
                 </div>
 
               </div>

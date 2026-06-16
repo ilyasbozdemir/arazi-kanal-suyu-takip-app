@@ -56,8 +56,8 @@ function createWindow(): void {
     autoHideMenuBar: true,
     titleBarStyle: 'hidden',
     titleBarOverlay: {
-      color: nativeTheme.shouldUseDarkColors ? '#0a0a0a' : '#f5f5f5', 
-      symbolColor: nativeTheme.shouldUseDarkColors ? '#d1d5db' : '#333333', 
+      color: '#00000000', // transparent
+      symbolColor: nativeTheme.shouldUseDarkColors ? '#ffffff' : '#000000', 
       height: 36 // h-9 equivalent
     },
     title: 'Arazi Kanal Suyu Takip Programı',
@@ -259,9 +259,9 @@ if (!gotTheLock) {
   ipcMain.handle('app:set-theme', (_event, theme: 'light' | 'dark') => {
     if (mainWindow) {
       if (theme === 'light') {
-        mainWindow.setTitleBarOverlay({ color: '#f5f5f5', symbolColor: '#333333' })
+        mainWindow.setTitleBarOverlay({ color: '#00000000', symbolColor: '#000000' })
       } else {
-        mainWindow.setTitleBarOverlay({ color: '#0a0a0a', symbolColor: '#d1d5db' })
+        mainWindow.setTitleBarOverlay({ color: '#00000000', symbolColor: '#ffffff' })
       }
     }
   })
