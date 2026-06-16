@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, nativeTheme } from 'electron'
 import path from 'path'
 import fs from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -54,6 +54,12 @@ function createWindow(): void {
     height: 800,
     show: false,
     autoHideMenuBar: true,
+    titleBarStyle: 'hidden',
+    titleBarOverlay: {
+      color: nativeTheme.shouldUseDarkColors ? '#0a0a0a' : '#f5f5f5', 
+      symbolColor: nativeTheme.shouldUseDarkColors ? '#d1d5db' : '#333333', 
+      height: 36 // h-9 equivalent
+    },
     title: 'Arazi Kanal Suyu Takip Programı',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
@@ -248,6 +254,16 @@ if (!gotTheLock) {
 
   ipcMain.handle('app:exit', () => {
     mainWindow?.close()
+  })
+
+  ipcMain.handle('app:set-theme', (_event, theme: 'light' | 'dark') => {
+    if (mainWindow) {
+      if (theme === 'light') {
+        mainWindow.setTitleBarOverlay({ color: '#f5f5f5', symbolColor: '#333333' })
+      } else {
+        mainWindow.setTitleBarOverlay({ color: '#0a0a0a', symbolColor: '#d1d5db' })
+      }
+    }
   })
 
   // Manual SMTP backup email trigger

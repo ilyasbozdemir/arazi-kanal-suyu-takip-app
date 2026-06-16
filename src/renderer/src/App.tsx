@@ -18,7 +18,9 @@ import {
   Grid,
   Info,
   Coins,
-  X
+  X,
+  Sun,
+  Moon
 } from 'lucide-react'
 
 import Startup from './components/Startup'
@@ -41,6 +43,7 @@ export default function App(): React.JSX.Element {
   // Institution Settings State
   const [kurumAdi, setKurumAdi] = useState('Arazi Kanal Suyu Takip Programı')
   const [kurumLogo, setKurumLogo] = useState<string | null>(null)
+  const [theme, setThemeState] = useState(localStorage.getItem('tema') || 'dark')
 
   // Auto-updater State
   const [updateAvailable, setUpdateAvailable] = useState(false)
@@ -147,10 +150,13 @@ export default function App(): React.JSX.Element {
 
       // Sync theme
       if (dbTheme) {
+        setThemeState(dbTheme)
         if (dbTheme === 'light') {
           document.documentElement.classList.add('light')
+          if (window.api?.setTheme) window.api.setTheme('light')
         } else {
           document.documentElement.classList.remove('light')
+          if (window.api?.setTheme) window.api.setTheme('dark')
         }
         localStorage.setItem('tema', dbTheme)
       }
@@ -166,8 +172,10 @@ export default function App(): React.JSX.Element {
     const localTheme = localStorage.getItem('tema') || 'dark'
     if (localTheme === 'light') {
       document.documentElement.classList.add('light')
+      if (window.api?.setTheme) window.api.setTheme('light')
     } else {
       document.documentElement.classList.remove('light')
+      if (window.api?.setTheme) window.api.setTheme('dark')
     }
   }, [])
 
@@ -269,15 +277,36 @@ export default function App(): React.JSX.Element {
     }
   }
 
+  const toggleTheme = () => {
+    const nextTheme = theme === 'light' ? 'dark' : 'light'
+    setThemeState(nextTheme)
+    
+    if (nextTheme === 'light') {
+      document.documentElement.classList.add('light')
+      if (window.api?.setTheme) window.api.setTheme('light')
+    } else {
+      document.documentElement.classList.remove('light')
+      if (window.api?.setTheme) window.api.setTheme('dark')
+    }
+    localStorage.setItem('tema', nextTheme)
+    
+    if (filePath) {
+      window.api.dbRun("UPDATE ayarlar SET deger = ? WHERE anahtar = 'tema'", [nextTheme]).catch(console.error)
+    }
+  }
+
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-[var(--background)] relative" ref={menuRef}>
       
       {/* 1. Desktop Menu Bar (Always visible at the top) */}
-      <div className="h-8 bg-slate-900/60 dark:bg-slate-950/40 border-b border-white/5 flex items-center justify-between px-4 text-xs select-none no-print z-50">
+      <div 
+        className="h-9 bg-[var(--menubar-bg)] text-[var(--menubar-text)] border-b border-white/5 flex items-center justify-between pl-4 pr-[140px] text-xs select-none no-print z-50 w-full transition-colors duration-200"
+        style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
+      >
         
         {/* Left Side: Brand Logo, Name & Dropdown Triggers */}
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-1.5 font-bold text-white uppercase tracking-wider text-[10px] max-w-[180px] truncate" title={kurumAdi}>
+          <div className="flex items-center space-x-1.5 font-bold text-[var(--text-primary)] uppercase tracking-wider text-[10px] max-w-[180px] truncate" title={kurumAdi}>
             {kurumLogo ? (
               <img src={kurumLogo} alt="Logo" className="h-4 w-4 object-contain rounded shrink-0" />
             ) : (
@@ -289,14 +318,14 @@ export default function App(): React.JSX.Element {
           <div className="h-4 w-px bg-white/10"></div>
 
           {/* Menus List */}
-          <div className="flex space-x-1">
+          <div className="flex space-x-1" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
             
             {/* DOSYA MENU */}
             <div className="relative">
               <button 
                 onClick={() => setActiveMenu(activeMenu === 'dosya' ? null : 'dosya')}
                 onMouseEnter={() => handleMenuHover('dosya')}
-                className={`px-3 py-1 rounded transition cursor-pointer text-slate-350 hover:text-white hover:bg-white/5 ${activeMenu === 'dosya' ? 'bg-white/10 text-white' : ''}`}
+                className={`px-3 py-1 rounded transition cursor-pointer hover:text-[var(--menubar-text-hover)] hover:bg-[var(--menubar-active-bg)] ${activeMenu === 'dosya' ? 'bg-[var(--menubar-active-bg)] text-[var(--menubar-text-hover)]' : ''}`}
               >
                 Dosya
               </button>
@@ -360,7 +389,7 @@ export default function App(): React.JSX.Element {
                 }}
                 onMouseEnter={() => filePath && handleMenuHover('moduller')}
                 disabled={!filePath}
-                className={`px-3 py-1 rounded transition cursor-pointer text-slate-350 hover:text-white hover:bg-white/5 ${activeMenu === 'moduller' ? 'bg-white/10 text-white' : ''} ${!filePath ? 'opacity-40 cursor-not-allowed' : ''}`}
+                className={`px-3 py-1 rounded transition cursor-pointer hover:text-[var(--menubar-text-hover)] hover:bg-[var(--menubar-active-bg)] ${activeMenu === 'moduller' ? 'bg-[var(--menubar-active-bg)] text-[var(--menubar-text-hover)]' : ''} ${!filePath ? 'opacity-40 cursor-not-allowed' : ''}`}
               >
                 Görünüm
               </button>
@@ -423,7 +452,7 @@ export default function App(): React.JSX.Element {
                 }}
                 onMouseEnter={() => filePath && handleMenuHover('islemler')}
                 disabled={!filePath}
-                className={`px-3 py-1 rounded transition cursor-pointer text-slate-350 hover:text-white hover:bg-white/5 ${activeMenu === 'islemler' ? 'bg-white/10 text-white' : ''} ${!filePath ? 'opacity-40 cursor-not-allowed' : ''}`}
+                className={`px-3 py-1 rounded transition cursor-pointer hover:text-[var(--menubar-text-hover)] hover:bg-[var(--menubar-active-bg)] ${activeMenu === 'islemler' ? 'bg-[var(--menubar-active-bg)] text-[var(--menubar-text-hover)]' : ''} ${!filePath ? 'opacity-40 cursor-not-allowed' : ''}`}
               >
                 İşlemler
               </button>
@@ -463,7 +492,7 @@ export default function App(): React.JSX.Element {
               <button 
                 onClick={() => setActiveMenu(activeMenu === 'yardim' ? null : 'yardim')}
                 onMouseEnter={() => handleMenuHover('yardim')}
-                className={`px-3 py-1 rounded transition cursor-pointer text-slate-350 hover:text-white hover:bg-white/5 ${activeMenu === 'yardim' ? 'bg-white/10 text-white' : ''}`}
+                className={`px-3 py-1 rounded transition cursor-pointer hover:text-[var(--menubar-text-hover)] hover:bg-[var(--menubar-active-bg)] ${activeMenu === 'yardim' ? 'bg-[var(--menubar-active-bg)] text-[var(--menubar-text-hover)]' : ''}`}
               >
                 Yardım
               </button>
@@ -492,7 +521,20 @@ export default function App(): React.JSX.Element {
         </div>
 
         {/* Right Side: File status, Save/Close & Theme */}
-        <div className="flex items-center space-x-3 text-slate-400">
+        <div className="flex items-center space-x-3" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+          
+          {/* THEME SWITCHER */}
+          <button
+            onClick={toggleTheme}
+            className="p-1 hover:bg-[var(--menubar-active-bg)] hover:text-[var(--menubar-text-hover)] rounded transition cursor-pointer"
+            title="Temayı Değiştir"
+          >
+            {theme === 'light' ? (
+              <Moon className="h-3.5 w-3.5" />
+            ) : (
+              <Sun className="h-3.5 w-3.5" />
+            )}
+          </button>
           
           {filePath && (
             <div className="flex items-center space-x-2.5">
@@ -514,7 +556,7 @@ export default function App(): React.JSX.Element {
               <button
                 onClick={handleSave}
                 disabled={!isDirty}
-                className={`p-1 rounded transition cursor-pointer ${isDirty ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20' : 'text-slate-600 cursor-not-allowed'}`}
+                className={`p-1 rounded transition cursor-pointer ${isDirty ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20' : 'opacity-50 cursor-not-allowed'}`}
                 title="Değişiklikleri Dosyaya Kaydet"
               >
                 <Save className="h-3.5 w-3.5" />
@@ -523,7 +565,7 @@ export default function App(): React.JSX.Element {
               {/* Close database file */}
               <button
                 onClick={handleClose}
-                className="p-1 hover:bg-rose-500/15 hover:text-rose-400 text-slate-550 rounded transition cursor-pointer"
+                className="p-1 hover:bg-rose-500/15 hover:text-rose-400 rounded transition cursor-pointer"
                 title="Veritabanı Dosyasını Kapat"
               >
                 <FolderClosed className="h-3.5 w-3.5" />

@@ -25,6 +25,7 @@ const api = {
   sendBackup: () => ipcRenderer.invoke('file:send-backup'),
   getAppVersion: () => ipcRenderer.invoke('app:version'),
   exitApp: () => ipcRenderer.invoke('app:exit'),
+  setTheme: (theme: 'light' | 'dark') => ipcRenderer.invoke('app:set-theme', theme),
   onUpdateAvailable: (callback: (info: any) => void) => {
     const listener = (_event: any, info: any) => callback(info)
     ipcRenderer.on('update-available', listener)
