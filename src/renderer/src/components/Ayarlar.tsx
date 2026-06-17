@@ -433,7 +433,7 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
                 type="button"
                 className="flex items-center space-x-2 px-5 py-2.5 rounded-xl border border-indigo-500 font-semibold bg-indigo-600 text-white shadow-lg shadow-indigo-600/15 cursor-default"
               >
-                <span>2 - Su Bekçisinden Gelen Fişe Göre (Ada-Parsel Örn: 250-5) [Aktif]</span>
+                <span>2 - Su Bekçisinden Gelen Fişe Göre (Fiş No- Fiş Seri No Örn: 250-5) [Aktif]</span>
               </button>
             </div>
           </div>

@@ -45,5 +45,23 @@ export const manifests: AppVersionManifest[] = [
         ]
       }
     ]
+  },
+  {
+    app: '1.0.0-beta.13',
+    schema_min: 2,
+    schema_max: 3,
+    release_date: '2026-06-17',
+    changes: [
+      {
+        schema: 3,
+        type: 'update',
+        description: 'Sulamalar tablosuna tapu_sahibi, fis_no ve seri_no ekleme',
+        columns_added: [
+          { table: 'sulamalar', column: 'tapu_sahibi' },
+          { table: 'sulamalar', column: 'fis_no' },
+          { table: 'sulamalar', column: 'seri_no' }
+        ]
+      }
+    ]
   }
 ]

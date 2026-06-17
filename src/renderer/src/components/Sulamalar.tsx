@@ -31,15 +31,17 @@ const turkishToLower = (str: string): string => {
 
 interface Sulama {
   id: number
-  tasinmaz_id: number
+  tasinmaz_id: number | null
   gorevli_id: number
   sulama_tarihi: string
   sulama_suresi_saat: number
   ucret: number
   odeme_durumu: string
   aciklama?: string
-  // Joined fields
   tapu_sahibi: string
+  fis_no?: string
+  seri_no?: string
+  // Joined fields
   ada: string
   parsel: string
   alan_m2: number
@@ -110,20 +112,35 @@ const renderReceiptContent = (s: Sulama, logo: string | null, name: string, biri
             <td className="p-2 bg-slate-50 font-bold border-r border-black">TAPU SAHİBİ / MALİK:</td>
             <td className="p-2 font-bold text-black uppercase">{s.tapu_sahibi}</td>
           </tr>
-          <tr className="border-b border-black">
-            <td className="p-2 bg-slate-50 font-bold border-r border-black">ADA - PARSEL:</td>
-            <td className="p-2 font-mono font-bold text-black">
-              {s.ada || '-'} - {s.parsel || '-'}
-            </td>
-          </tr>
-          <tr className="border-b border-black">
-            <td className="p-2 bg-slate-50 font-bold border-r border-black">KÖY / MAHALLE:</td>
-            <td className="p-2 text-black">{s.mahalle_koy || '-'}</td>
-          </tr>
-          <tr className="border-b border-black">
-            <td className="p-2 bg-slate-50 font-bold border-r border-black">SU KANALI:</td>
-            <td className="p-2 text-black">{s.kanal_adi || '-'}</td>
-          </tr>
+          {s.tasinmaz_id ? (
+            <>
+              <tr className="border-b border-black">
+                <td className="p-2 bg-slate-50 font-bold border-r border-black">ADA - PARSEL:</td>
+                <td className="p-2 font-mono font-bold text-black">
+                  {s.ada || '-'} - {s.parsel || '-'}
+                </td>
+              </tr>
+              <tr className="border-b border-black">
+                <td className="p-2 bg-slate-50 font-bold border-r border-black">KÖY / MAHALLE:</td>
+                <td className="p-2 text-black">{s.mahalle_koy || '-'}</td>
+              </tr>
+              <tr className="border-b border-black">
+                <td className="p-2 bg-slate-50 font-bold border-r border-black">SU KANALI:</td>
+                <td className="p-2 text-black">{s.kanal_adi || '-'}</td>
+              </tr>
+            </>
+          ) : (
+            <>
+              <tr className="border-b border-black">
+                <td className="p-2 bg-slate-50 font-bold border-r border-black">FİŞ NO / DEFTER NO:</td>
+                <td className="p-2 font-mono font-bold text-black">{s.fis_no || '-'}</td>
+              </tr>
+              <tr className="border-b border-black">
+                <td className="p-2 bg-slate-50 font-bold border-r border-black">SERİ NO:</td>
+                <td className="p-2 font-mono font-bold text-black">{s.seri_no || '-'}</td>
+              </tr>
+            </>
+          )}
           <tr className="border-b border-black">
             <td className="p-2 bg-slate-50 font-bold border-r border-black">SULAMA GÖREVLİSİ (MERAV):</td>
             <td className="p-2 text-black">{s.ad_soyad}</td>
@@ -208,8 +225,8 @@ export default function Sulamalar({
 
   // Form State (Standard Mode)
   const [fisNoGiris, setFisNoGiris] = useState('')
+  const [seriNoGiris, setSeriNoGiris] = useState('')
   const [malikGiris, setMalikGiris] = useState('')
-  const [hizliAramaText, setHizliAramaText] = useState('')
 
   const [gorevliId, setGorevliId] = useState('')
   const [sulamaTarihi, setSulamaTarihi] = useState(new Date().toISOString().split('T')[0])
@@ -221,9 +238,10 @@ export default function Sulamalar({
   const [aciklama, setAciklama] = useState('')
 
   // New Row State (Excel Mode)
-  const [newRowTasinmazSearch, setNewRowTasinmazSearch] = useState('')
   const [newRow, setNewRow] = useState({
-    tasinmaz_id: '',
+    tapu_sahibi: '',
+    fis_no: '',
+    seri_no: '',
     gorevli_id: '',
     sulama_tarihi: new Date().toISOString().split('T')[0],
     sulama_suresi_saat: '',
@@ -243,7 +261,11 @@ export default function Sulamalar({
     try {
       // Load slips with joined data
       const slips = await window.api.dbQuery(`
-        SELECT s.*, t.tapu_sahibi, t.ada, t.parsel, t.alan_m2, t.mahalle_koy, t.kanal_adi,
+        SELECT s.*, 
+               COALESCE(s.tapu_sahibi, t.tapu_sahibi) as tapu_sahibi,
+               COALESCE(s.fis_no, t.ada) as fis_no,
+               COALESCE(s.seri_no, t.parsel) as seri_no,
+               t.ada, t.parsel, t.alan_m2, t.mahalle_koy, t.kanal_adi,
                g.ad_soyad, g.gorev
         FROM sulamalar s
         LEFT JOIN tasinmazlar t ON s.tasinmaz_id = t.id
@@ -378,7 +400,13 @@ export default function Sulamalar({
 
     const fisNo = fisNoGiris.trim()
     if (!fisNo) {
-      setError('Lütfen Ada-Parsel bilgisini girin.')
+      setError('Lütfen Fiş No / Defter No girin.')
+      return
+    }
+
+    const seriNo = seriNoGiris.trim()
+    if (!seriNo) {
+      setError('Lütfen Seri No girin.')
       return
     }
 
@@ -405,35 +433,7 @@ export default function Sulamalar({
       return
     }
 
-    const parts = fisNo
-      .replace(/[\/\\]/g, '-')
-      .replace(/\s+/g, '-')
-      .split('-')
-      .map((s) => s.trim())
-    const ada = parts[0] || ''
-    const parsel = parts[1] || ''
-
     try {
-      let finalTasinmazId = 0
-
-      // Find if there is a matching property in the database
-      const existing = await window.api.dbQuery(
-        'SELECT id FROM tasinmazlar WHERE LOWER(TRIM(tapu_sahibi)) = LOWER(TRIM(?)) AND ada = ? AND parsel = ?',
-        [malikName, ada, parsel]
-      )
-
-      if (existing && existing.length > 0) {
-        finalTasinmazId = existing[0].id
-      } else {
-        // Automatically insert new property record
-        const insertRes = await window.api.dbRun(
-          `INSERT INTO tasinmazlar (tapu_sahibi, ada, parsel, mahalle_koy, alan_m2, kanal_adi, aciklama) 
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [malikName, ada, parsel, '', 0, '', 'Sulamadan otomatik oluşturuldu']
-        )
-        finalTasinmazId = insertRes.lastInsertRowid
-      }
-
       // Borçlandırma modunda ilk aktif görevliyi fallback olarak kullan
       const finalGorevliId = isBorclandirma
         ? (gorevliler[0]?.id ?? 1)
@@ -448,10 +448,12 @@ export default function Sulamalar({
         // Update
         await window.api.dbRun(
           `UPDATE sulamalar 
-           SET tasinmaz_id = ?, gorevli_id = ?, sulama_tarihi = ?, sulama_suresi_saat = ?, ucret = ?, odeme_durumu = ?, aciklama = ? 
+           SET tasinmaz_id = NULL, tapu_sahibi = ?, fis_no = ?, seri_no = ?, gorevli_id = ?, sulama_tarihi = ?, sulama_suresi_saat = ?, ucret = ?, odeme_durumu = ?, aciklama = ? 
            WHERE id = ?`,
           [
-            finalTasinmazId,
+            malikName,
+            fisNo,
+            seriNo,
             finalGorevliId,
             sulamaTarihi,
             hours,
@@ -464,10 +466,12 @@ export default function Sulamalar({
       } else {
         // Insert
         await window.api.dbRun(
-          `INSERT INTO sulamalar (tasinmaz_id, gorevli_id, sulama_tarihi, sulama_suresi_saat, ucret, odeme_durumu, aciklama) 
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO sulamalar (tasinmaz_id, tapu_sahibi, fis_no, seri_no, gorevli_id, sulama_tarihi, sulama_suresi_saat, ucret, odeme_durumu, aciklama) 
+           VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
-            finalTasinmazId,
+            malikName,
+            fisNo,
+            seriNo,
             finalGorevliId,
             sulamaTarihi,
             hours,
@@ -494,11 +498,13 @@ export default function Sulamalar({
 
       let updatedHours = row.sulama_suresi_saat
       let updatedFee = row.ucret
-      let updatedTasinmazId = row.tasinmaz_id
       let updatedGorevliId = row.gorevli_id
       let updatedTarih = row.sulama_tarihi
       let updatedOdeme = row.odeme_durumu
       let updatedAciklama = row.aciklama
+      let updatedTapuSahibi = row.tapu_sahibi
+      let updatedFisNo = row.fis_no
+      let updatedSeriNo = row.seri_no
 
       if (field === 'sulama_suresi_saat') {
         updatedHours = parseFloat(value) || 0
@@ -508,8 +514,6 @@ export default function Sulamalar({
         }
       } else if (field === 'ucret') {
         updatedFee = parseFloat(value) || 0
-      } else if (field === 'tasinmaz_id') {
-        updatedTasinmazId = parseInt(value)
       } else if (field === 'gorevli_id') {
         updatedGorevliId = parseInt(value)
       } else if (field === 'sulama_tarihi') {
@@ -518,14 +522,22 @@ export default function Sulamalar({
         updatedOdeme = value
       } else if (field === 'aciklama') {
         updatedAciklama = value
+      } else if (field === 'tapu_sahibi') {
+        updatedTapuSahibi = value
+      } else if (field === 'fis_no') {
+        updatedFisNo = value
+      } else if (field === 'seri_no') {
+        updatedSeriNo = value
       }
 
       await window.api.dbRun(
         `UPDATE sulamalar 
-         SET tasinmaz_id = ?, gorevli_id = ?, sulama_tarihi = ?, sulama_suresi_saat = ?, ucret = ?, odeme_durumu = ?, aciklama = ? 
+         SET tasinmaz_id = NULL, tapu_sahibi = ?, fis_no = ?, seri_no = ?, gorevli_id = ?, sulama_tarihi = ?, sulama_suresi_saat = ?, ucret = ?, odeme_durumu = ?, aciklama = ? 
          WHERE id = ?`,
         [
-          updatedTasinmazId,
+          updatedTapuSahibi,
+          updatedFisNo,
+          updatedSeriNo,
           updatedGorevliId,
           updatedTarih,
           updatedHours,
@@ -544,7 +556,18 @@ export default function Sulamalar({
 
   // Quick Insert (Excel Mode bottom row)
   const handleAddExcelRow = async (): Promise<void> => {
-    // tasinmaz_id artık zorunlu değil — seçilmemişse NULL kaydedilir
+    if (!newRow.tapu_sahibi.trim()) {
+      alert('Lütfen tapu sahibi adını girin.')
+      return
+    }
+    if (!newRow.fis_no.trim()) {
+      alert('Lütfen Fiş No girin.')
+      return
+    }
+    if (!newRow.seri_no.trim()) {
+      alert('Lütfen Seri No girin.')
+      return
+    }
     if (!newRow.gorevli_id) {
       alert('Lütfen bir görevli seçin.')
       return
@@ -561,12 +584,13 @@ export default function Sulamalar({
     }
 
     try {
-      const tasinmazIdVal = newRow.tasinmaz_id ? parseInt(newRow.tasinmaz_id) : null
       await window.api.dbRun(
-        `INSERT INTO sulamalar (tasinmaz_id, gorevli_id, sulama_tarihi, sulama_suresi_saat, ucret, odeme_durumu, aciklama) 
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO sulamalar (tasinmaz_id, tapu_sahibi, fis_no, seri_no, gorevli_id, sulama_tarihi, sulama_suresi_saat, ucret, odeme_durumu, aciklama) 
+         VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          tasinmazIdVal,
+          newRow.tapu_sahibi.trim(),
+          newRow.fis_no.trim(),
+          newRow.seri_no.trim(),
           parseInt(newRow.gorevli_id),
           newRow.sulama_tarihi,
           hours,
@@ -577,10 +601,10 @@ export default function Sulamalar({
       )
 
       // Reset bottom row state
-      // Reset bottom row state
-      setNewRowTasinmazSearch('')
       setNewRow({
-        tasinmaz_id: '',
+        tapu_sahibi: '',
+        fis_no: '',
+        seri_no: '',
         gorevli_id: gorevliler.length > 0 ? gorevliler[0].id.toString() : '',
         sulama_tarihi: new Date().toISOString().split('T')[0],
         sulama_suresi_saat: '',
@@ -596,34 +620,14 @@ export default function Sulamalar({
     }
   }
 
-  const handleNewRowTasinmazChange = (val: string) => {
-    setNewRowTasinmazSearch(val)
-    const match = val.match(/\[ID:(\d+)\]$/)
-    if (match) {
-      setNewRow((prev) => ({ ...prev, tasinmaz_id: match[1] }))
-    } else {
-      setNewRow((prev) => ({ ...prev, tasinmaz_id: '' }))
-    }
-  }
-
   const handleEdit = (s: Sulama): void => {
     onViewModeChange('standard') // Switch to standard view to edit in form
     setEditingId(s.id)
     setShowFormPanel(true)
 
-    // Auto-fill fisNoGiris and malikGiris
-    const t = tasinmazlar.find((x) => x.id === s.tasinmaz_id)
-    if (t) {
-      if (t.ada && t.parsel) {
-        setFisNoGiris(`${t.ada}-${t.parsel}`)
-      } else {
-        setFisNoGiris('')
-      }
-      setMalikGiris(t.tapu_sahibi)
-    } else {
-      setFisNoGiris('')
-      setMalikGiris('')
-    }
+    setFisNoGiris(s.fis_no || '')
+    setSeriNoGiris(s.seri_no || '')
+    setMalikGiris(s.tapu_sahibi || '')
 
     setGorevliId(s.gorevli_id.toString())
     setSulamaTarihi(s.sulama_tarihi)
@@ -652,6 +656,7 @@ export default function Sulamalar({
   const resetForm = (): void => {
     setEditingId(null)
     setFisNoGiris('')
+    setSeriNoGiris('')
     setMalikGiris('')
     // We intentionally PRESERVE gorevliId and sulamaTarihi to allow rapid consecutive entries of slips for the same supervisor and date.
     setSulamaSuresiSaat('')
@@ -1093,64 +1098,35 @@ export default function Sulamalar({
               </div>
 
 
-              {/* Hızlı Malik / Fiş Arama */}
-              <div className="space-y-1 pb-3 border-b border-slate-800/60">
-                <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider block">
-                  Kayıtlı Malik Arama (Hızlı Doldur)
-                </label>
-                <input
-                  type="text"
-                  list="form-tasinmazlar-list"
-                  className="w-full px-3 py-2 rounded-xl bg-slate-900/60 border border-indigo-500/20 text-xs text-indigo-300 placeholder-indigo-500/60"
-                  placeholder="Kişi adı veya Fiş No yazın..."
-                  value={hizliAramaText}
-                  onChange={(e) => {
-                    const val = e.target.value
-                    setHizliAramaText(val)
-                    const match = val.match(/\[ID:(\d+)\]$/)
-                    if (match) {
-                      const selectedId = parseInt(match[1])
-                      const found = tasinmazlar.find((t) => t.id === selectedId)
-                      if (found) {
-                        setMalikGiris(found.tapu_sahibi)
-                        if (found.ada || found.parsel) {
-                          setFisNoGiris(`${found.ada || ''}-${found.parsel || ''}`)
-                        } else {
-                          setFisNoGiris('')
-                        }
-                        setHizliAramaText('')
-                      }
-                    }
-                  }}
-                />
-                <datalist id="form-tasinmazlar-list">
-                  {tasinmazlar.map((t) => (
-                    <option
-                      key={t.id}
-                      value={`${t.tapu_sahibi} - ${t.mahalle_koy || 'Mülk'} (Ada: ${t.ada || '-'}, Parsel: ${t.parsel || '-'}) [ID:${t.id}]`}
-                    />
-                  ))}
-                </datalist>
-              </div>
-
-              {/* Fiş No - Seri No Giriş */}
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider flex items-center gap-1.5">
-                  <Grid className="w-3.5 h-3.5 text-indigo-400" />
-                  Ada - Parsel *
-                </label>
-                <div className="relative">
+              {/* Fiş No & Seri No Giriş */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider flex items-center gap-1.5">
+                    <Grid className="w-3.5 h-3.5 text-indigo-400" />
+                    Fiş No / Defter No *
+                  </label>
                   <input
                     type="text"
-                    className="w-full px-3 py-2.5 rounded-xl glass-input text-xs font-mono font-bold tracking-wider"
-                    placeholder="Örn: 450-4"
+                    className="w-full px-3 py-2.5 rounded-xl glass-input text-xs font-bold"
+                    placeholder="Örn: 250"
                     value={fisNoGiris}
-                    onChange={(e) => handleFisNoChange(e.target.value)}
+                    onChange={(e) => setFisNoGiris(e.target.value)}
                     required
                   />
                 </div>
-                <div className="text-[10px] text-slate-500 mt-1">
-                  Ada ve parsel numarasını aralarında tire '-' olacak şekilde yazın.
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider flex items-center gap-1.5">
+                    <Grid className="w-3.5 h-3.5 text-indigo-400" />
+                    Seri No *
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2.5 rounded-xl glass-input text-xs font-bold"
+                    placeholder="Örn: 5"
+                    value={seriNoGiris}
+                    onChange={(e) => setSeriNoGiris(e.target.value)}
+                    required
+                  />
                 </div>
               </div>
 
@@ -1170,7 +1146,7 @@ export default function Sulamalar({
                   required
                 />
                 <datalist id="sulamalar-owners-autocomplete">
-                  {Array.from(new Set(tasinmazlar.map(t => t.tapu_sahibi).filter(Boolean))).map(owner => (
+                  {Array.from(new Set(tasinmazlar.map((t) => t.tapu_sahibi).filter(Boolean))).map((owner) => (
                     <option key={owner} value={owner} />
                   ))}
                 </datalist>
@@ -1199,7 +1175,7 @@ export default function Sulamalar({
                         <div key={slip.id} className="flex flex-col gap-0.5 text-[10px] bg-slate-950/40 p-1.5 rounded-lg border border-white/5">
                           <div className="flex justify-between items-center">
                             <span className="text-slate-300 font-medium">
-                              {new Date(slip.sulama_tarihi).toLocaleDateString('tr-TR')} | {slip.ada || '-'}-{slip.parsel || '-'} ({slip.sulama_suresi_saat} sa)
+                              {new Date(slip.sulama_tarihi).toLocaleDateString('tr-TR')} | {slip.tasinmaz_id ? `${slip.ada || '-'}-${slip.parsel || '-'}` : `${slip.fis_no || '-'}-${slip.seri_no || '-'}`} ({slip.sulama_suresi_saat} sa)
                             </span>
                             <div className="flex items-center space-x-1.5">
                               <span className="font-semibold text-slate-200">₺{slip.ucret}</span>
@@ -1392,13 +1368,15 @@ export default function Sulamalar({
               <thead>
                 <tr className="border-b border-slate-800 font-semibold text-slate-400 uppercase tracking-wider text-[10px]">
                   <th className="py-2.5 px-1.5 w-[11%]">Tarih</th>
-                  <th className="py-2.5 px-1.5 w-[25%]">Taşınmaz (Tapu Sahibi)</th>
-                  <th className="py-2.5 px-1.5 w-[18%]">Görevli</th>
-                  <th className="py-2.5 px-1.5 w-[9%] text-right">Süre (Saat)</th>
-                  <th className="py-2.5 px-1.5 w-[10%] text-right">Ücret (₺)</th>
+                  <th className="py-2.5 px-1.5 w-[20%]">Tapu Sahibi</th>
+                  <th className="py-2.5 px-1.5 w-[9%]">Fiş No</th>
+                  <th className="py-2.5 px-1.5 w-[6%]">Seri No</th>
+                  <th className="py-2.5 px-1.5 w-[15%]">Görevli</th>
+                  <th className="py-2.5 px-1.5 w-[8%] text-right">Süre (Saat)</th>
+                  <th className="py-2.5 px-1.5 w-[8%] text-right">Ücret (₺)</th>
                   <th className="py-2.5 px-1.5 w-[10%] text-center">Ödeme Durumu</th>
-                  <th className="py-2.5 px-1.5 w-[12%]">Açıklama</th>
-                  <th className="py-2.5 px-1.5 w-[5%] text-right">İşlem</th>
+                  <th className="py-2.5 px-1.5 w-[10%]">Açıklama</th>
+                  <th className="py-2.5 px-1.5 w-[3%] text-right">İşlem</th>
                 </tr>
               </thead>
             </table>
@@ -1449,26 +1427,41 @@ export default function Sulamalar({
                               }
                             />
                           </td>
-                          {/* Taşınmaz */}
-                          <td className="p-1" style={{ width: '25%' }}>
-                            <select
+                          {/* Tapu Sahibi */}
+                          <td className="p-1" style={{ width: '20%' }}>
+                            <input
+                              type="text"
                               className="bg-slate-950/20 hover:bg-slate-900 focus:bg-slate-900 border border-transparent focus:border-indigo-500 rounded px-1 py-1 w-full text-xs text-slate-300 font-bold"
-                              value={s.tasinmaz_id}
-                              onChange={(e) => updateExcelRow(s.id, 'tasinmaz_id', e.target.value)}
-                            >
-                              {tasinmazlar.map((t) => (
-                                <option
-                                  key={t.id}
-                                  className="bg-slate-950 text-slate-200"
-                                  value={t.id}
-                                >
-                                  {t.tapu_sahibi} ({t.mahalle_koy || 'Mülk'})
-                                </option>
-                              ))}
-                            </select>
+                              value={s.tapu_sahibi || ''}
+                              onChange={(e) =>
+                                updateExcelRow(s.id, 'tapu_sahibi', e.target.value)
+                              }
+                            />
+                          </td>
+                          {/* Fiş No */}
+                          <td className="p-1" style={{ width: '9%' }}>
+                            <input
+                              type="text"
+                              className="bg-slate-950/20 hover:bg-slate-900 focus:bg-slate-900 border border-transparent focus:border-indigo-500 rounded px-1 py-1 w-full text-xs text-slate-300 font-bold"
+                              value={s.fis_no || ''}
+                              onChange={(e) =>
+                                updateExcelRow(s.id, 'fis_no', e.target.value)
+                              }
+                            />
+                          </td>
+                          {/* Seri No */}
+                          <td className="p-1" style={{ width: '6%' }}>
+                            <input
+                              type="text"
+                              className="bg-slate-950/20 hover:bg-slate-900 focus:bg-slate-900 border border-transparent focus:border-indigo-500 rounded px-1 py-1 w-full text-xs text-slate-300 font-bold"
+                              value={s.seri_no || ''}
+                              onChange={(e) =>
+                                updateExcelRow(s.id, 'seri_no', e.target.value)
+                              }
+                            />
                           </td>
                           {/* Görevli */}
-                          <td className="p-1" style={{ width: '18%' }}>
+                          <td className="p-1" style={{ width: '15%' }}>
                             <select
                               className="bg-slate-950/20 hover:bg-slate-900 focus:bg-slate-900 border border-transparent focus:border-indigo-500 rounded px-1 py-1 w-full text-xs text-slate-300"
                               value={s.gorevli_id}
@@ -1486,7 +1479,7 @@ export default function Sulamalar({
                             </select>
                           </td>
                           {/* Süre */}
-                          <td className="p-1" style={{ width: '9%' }}>
+                          <td className="p-1" style={{ width: '8%' }}>
                             <input
                               type="number"
                               step="any"
@@ -1498,7 +1491,7 @@ export default function Sulamalar({
                             />
                           </td>
                           {/* Ücret */}
-                          <td className="p-1" style={{ width: '10%' }}>
+                          <td className="p-1" style={{ width: '8%' }}>
                             <input
                               type="number"
                               step="any"
@@ -1532,7 +1525,7 @@ export default function Sulamalar({
                             </select>
                           </td>
                           {/* Açıklama */}
-                          <td className="p-1" style={{ width: '12%' }}>
+                          <td className="p-1" style={{ width: '10%' }}>
                             <input
                               type="text"
                               placeholder="Açıklama girin..."
@@ -1542,7 +1535,7 @@ export default function Sulamalar({
                             />
                           </td>
                           {/* Delete Action */}
-                          <td className="p-1 text-right" style={{ width: '5%' }}>
+                          <td className="p-1 text-right" style={{ width: '3%' }}>
                             <button
                               onClick={() => handleDelete(s.id)}
                               className="p-1 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded transition cursor-pointer"
@@ -1576,26 +1569,50 @@ export default function Sulamalar({
                       }
                     />
                   </td>
-                  {/* Taşınmaz */}
-                  <td className="p-1.5" style={{ width: '25%' }}>
+                  {/* Tapu Sahibi */}
+                  <td className="p-1.5" style={{ width: '20%' }}>
                     <input
-                      list="tasinmazlar-list"
-                      placeholder="Mülk/Kişi Ara..."
-                      className={`bg-slate-900 border ${newRow.tasinmaz_id ? 'border-emerald-500/50' : 'border-indigo-500/25'} focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-indigo-300 font-bold`}
-                      value={newRowTasinmazSearch}
-                      onChange={(e) => handleNewRowTasinmazChange(e.target.value)}
+                      type="text"
+                      list="sulamalar-excel-owners"
+                      placeholder="Tapu Sahibi / Malik..."
+                      className="bg-slate-900 border border-indigo-500/25 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-slate-300 font-bold"
+                      value={newRow.tapu_sahibi}
+                      onChange={(e) =>
+                        setNewRow((prev) => ({ ...prev, tapu_sahibi: e.target.value }))
+                      }
                     />
-                    <datalist id="tasinmazlar-list">
-                      {tasinmazlar.map((t) => (
-                        <option
-                          key={t.id}
-                          value={`${t.tapu_sahibi} - ${t.mahalle_koy || 'Mülk'} (Ada: ${t.ada || '-'}, Parsel: ${t.parsel || '-'}) [ID:${t.id}]`}
-                        />
+                    <datalist id="sulamalar-excel-owners">
+                      {Array.from(new Set(tasinmazlar.map((t) => t.tapu_sahibi).filter(Boolean))).map((owner) => (
+                        <option key={owner} value={owner} />
                       ))}
                     </datalist>
                   </td>
+                  {/* Fiş No */}
+                  <td className="p-1.5" style={{ width: '9%' }}>
+                    <input
+                      type="text"
+                      placeholder="Fiş No"
+                      className="bg-slate-900 border border-indigo-500/25 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-slate-300 font-bold"
+                      value={newRow.fis_no}
+                      onChange={(e) =>
+                        setNewRow((prev) => ({ ...prev, fis_no: e.target.value }))
+                      }
+                    />
+                  </td>
+                  {/* Seri No */}
+                  <td className="p-1.5" style={{ width: '6%' }}>
+                    <input
+                      type="text"
+                      placeholder="Seri No"
+                      className="bg-slate-900 border border-indigo-500/25 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-slate-300 font-bold"
+                      value={newRow.seri_no}
+                      onChange={(e) =>
+                        setNewRow((prev) => ({ ...prev, seri_no: e.target.value }))
+                      }
+                    />
+                  </td>
                   {/* Görevli */}
-                  <td className="p-1.5" style={{ width: '18%' }}>
+                  <td className="p-1.5" style={{ width: '15%' }}>
                     <select
                       className="bg-slate-900 border border-indigo-500/25 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-slate-300"
                       value={newRow.gorevli_id}
@@ -1611,7 +1628,7 @@ export default function Sulamalar({
                     </select>
                   </td>
                   {/* Süre */}
-                  <td className="p-1.5" style={{ width: '9%' }}>
+                  <td className="p-1.5" style={{ width: '8%' }}>
                     <input
                       type="number"
                       step="any"
@@ -1624,7 +1641,7 @@ export default function Sulamalar({
                     />
                   </td>
                   {/* Ücret */}
-                  <td className="p-1.5" style={{ width: '10%' }}>
+                  <td className="p-1.5" style={{ width: '8%' }}>
                     <input
                       type="number"
                       step="any"
@@ -1657,7 +1674,7 @@ export default function Sulamalar({
                     </select>
                   </td>
                   {/* Açıklama */}
-                  <td className="p-1.5" style={{ width: '12%' }}>
+                  <td className="p-1.5" style={{ width: '10%' }}>
                     <input
                       type="text"
                       placeholder="Açıklama..."
@@ -1667,7 +1684,7 @@ export default function Sulamalar({
                     />
                   </td>
                   {/* Save New Row Action */}
-                  <td className="p-1.5 text-right" style={{ width: '5%' }}>
+                  <td className="p-1.5 text-right" style={{ width: '3%' }}>
                     <button
                       onClick={handleAddExcelRow}
                       className="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition cursor-pointer"
