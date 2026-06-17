@@ -80,5 +80,26 @@ export const manifests: AppVersionManifest[] = [
         ]
       }
     ]
+  },
+  {
+    app: '1.0.0-beta.16',
+    schema_min: 4,
+    schema_max: 5,
+    release_date: '2026-06-17',
+    changes: [
+      {
+        schema: 5,
+        type: 'update',
+        description: 'Sulamalar tablosundaki tasinmaz_id NOT NULL kisitlamasini kaldirma',
+        raw_sql: [
+          'PRAGMA foreign_keys=OFF;',
+          'ALTER TABLE sulamalar RENAME TO sulamalar_old;',
+          'CREATE TABLE sulamalar (id INTEGER PRIMARY KEY AUTOINCREMENT, tasinmaz_id INTEGER, gorevli_id INTEGER NOT NULL, sulama_tarihi TEXT NOT NULL, sulama_suresi_saat REAL NOT NULL, ucret REAL NOT NULL, odeme_durumu TEXT DEFAULT \'Ödenmedi\', aciklama TEXT, tapu_sahibi TEXT, fis_no TEXT, seri_no TEXT, yazdirildi INTEGER DEFAULT 0, yazdirilma_tarihi TEXT, FOREIGN KEY (tasinmaz_id) REFERENCES tasinmazlar(id) ON DELETE SET NULL, FOREIGN KEY (gorevli_id) REFERENCES gorevliler(id) ON DELETE RESTRICT, CHECK(odeme_durumu IN (\'Ödendi\', \'Ödenmedi\')));',
+          'INSERT INTO sulamalar (id, tasinmaz_id, gorevli_id, sulama_tarihi, sulama_suresi_saat, ucret, odeme_durumu, aciklama, tapu_sahibi, fis_no, seri_no, yazdirildi, yazdirilma_tarihi) SELECT id, tasinmaz_id, gorevli_id, sulama_tarihi, sulama_suresi_saat, ucret, odeme_durumu, aciklama, tapu_sahibi, fis_no, seri_no, yazdirildi, yazdirilma_tarihi FROM sulamalar_old;',
+          'DROP TABLE sulamalar_old;',
+          'PRAGMA foreign_keys=ON;'
+        ]
+      }
+    ]
   }
 ]

@@ -695,6 +695,50 @@ export default function Sulamalar({
     }
   }, [viewMode, undoStack, redoStack, sulamalar, originalSulamalar, hasExcelChanges, modifiedIds])
 
+  // Sync state with global header
+  useEffect(() => {
+    if (viewMode === 'excel') {
+      window.dispatchEvent(
+        new CustomEvent('excel-history-state', {
+          detail: {
+            canUndo: undoStack.length > 0,
+            canRedo: redoStack.length > 0,
+            hasChanges: hasExcelChanges
+          }
+        })
+      )
+    } else {
+      window.dispatchEvent(
+        new CustomEvent('excel-history-state', {
+          detail: {
+            canUndo: false,
+            canRedo: false,
+            hasChanges: false
+          }
+        })
+      )
+    }
+  }, [undoStack.length, redoStack.length, hasExcelChanges, viewMode])
+
+  // Listen to global history actions
+  useEffect(() => {
+    if (viewMode !== 'excel') return
+
+    const onUndo = () => handleUndo()
+    const onRedo = () => handleRedo()
+    const onSave = () => saveExcelChanges()
+
+    window.addEventListener('excel-undo', onUndo)
+    window.addEventListener('excel-redo', onRedo)
+    window.addEventListener('excel-save', onSave)
+
+    return () => {
+      window.removeEventListener('excel-undo', onUndo)
+      window.removeEventListener('excel-redo', onRedo)
+      window.removeEventListener('excel-save', onSave)
+    }
+  }, [viewMode, undoStack, redoStack, sulamalar, hasExcelChanges, modifiedIds, originalSulamalar])
+
   // Quick Insert (Excel Mode bottom row)
   const handleAddExcelRow = async (): Promise<void> => {
     if (hasExcelChanges) {
@@ -1525,58 +1569,9 @@ export default function Sulamalar({
       ) : (
         /* EXCEL GRID EDITING MODE */
         <div className="glass-card rounded-2xl flex-1 overflow-hidden flex flex-col p-4">
-          {/* Action Bar (Undo, Redo, Save) */}
-          <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800/40 shrink-0">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider mr-2">Değişiklik Geçmişi:</span>
-              <button
-                onClick={handleUndo}
-                disabled={undoStack.length === 0}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer ${
-                  undoStack.length > 0
-                    ? 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 hover:text-white'
-                    : 'bg-slate-900/35 border-transparent text-slate-650 cursor-not-allowed'
-                }`}
-                title="Geri Al (Ctrl + Z)"
-              >
-                <Undo2 className="w-3.5 h-3.5" />
-                <span>Geri Al</span>
-              </button>
-              <button
-                onClick={handleRedo}
-                disabled={redoStack.length === 0}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer ${
-                  redoStack.length > 0
-                    ? 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 hover:text-white'
-                    : 'bg-slate-900/35 border-transparent text-slate-650 cursor-not-allowed'
-                }`}
-                title="İleri Al (Ctrl + Y)"
-              >
-                <Redo2 className="w-3.5 h-3.5" />
-                <span>İleri Al</span>
-              </button>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {hasExcelChanges && (
-                <span className="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-2.5 py-1 rounded border border-amber-400/20">
-                  {modifiedIds.size} satırda kaydedilmemiş değişiklik var
-                </span>
-              )}
-              <button
-                onClick={saveExcelChanges}
-                disabled={!hasExcelChanges}
-                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer shadow-lg ${
-                  hasExcelChanges
-                    ? 'bg-emerald-650 border-transparent text-white hover:bg-emerald-600 shadow-emerald-950/15'
-                    : 'bg-slate-900/35 border-transparent text-slate-650 cursor-not-allowed shadow-none'
-                }`}
-                title="Değişiklikleri Kaydet (Ctrl + S)"
-              >
-                <Save className="w-3.5 h-3.5" />
-                <span>Kaydet</span>
-              </button>
-            </div>
+          {/* Tips Banner */}
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800/40 shrink-0 text-[11px] text-slate-400">
+            <span>💡 Tablodaki hücrelere çift tıklayarak düzenleme yapabilirsiniz. Değişikliklerinizi yukarıdaki menüden veya <kbd className="bg-slate-900 border border-slate-800 px-1 py-0.5 rounded text-[10px] text-slate-300 font-mono">Ctrl + S</kbd> ile kaydedebilirsiniz.</span>
           </div>
 
           {/* Sticky Header */}

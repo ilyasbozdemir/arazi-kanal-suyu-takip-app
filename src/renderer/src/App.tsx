@@ -22,7 +22,9 @@ import {
   X,
   Sun,
   Moon,
-  Search
+  Search,
+  Undo2,
+  Redo2
 } from 'lucide-react'
 
 import Startup from './components/Startup'
@@ -44,9 +46,9 @@ export default function App(): React.JSX.Element {
   const { activeTabKey, tabs, addTab, clearTabs } = useTabStore()
   const [sulamaViewMode, setSulamaViewMode] = useState<'standard' | 'excel'>('standard')
 
-  // Landowners List for global autocomplete search
   const [uniqueOwners, setUniqueOwners] = useState<string[]>([])
   const [globalSearchOwner, setGlobalSearchOwner] = useState('')
+  const [excelHistoryState, setExcelHistoryState] = useState({ canUndo: false, canRedo: false, hasChanges: false })
 
   const activeTabItem = tabs.find((t) => t.key === activeTabKey)
   const activeTab = activeTabItem?.id || 'dashboard'
@@ -222,6 +224,25 @@ export default function App(): React.JSX.Element {
     } else {
       document.documentElement.classList.remove('light')
       if (window.api?.setTheme) window.api.setTheme('dark')
+    }
+  }, [])
+
+  useEffect(() => {
+    if (excelHistoryState.canUndo || excelHistoryState.canRedo || excelHistoryState.hasChanges) {
+      setExcelHistoryState({ canUndo: false, canRedo: false, hasChanges: false })
+    }
+  }, [activeTabKey])
+
+  useEffect(() => {
+    const handleHistoryState = (e: Event): void => {
+      const customEvent = e as CustomEvent
+      if (customEvent.detail) {
+        setExcelHistoryState(customEvent.detail)
+      }
+    }
+    window.addEventListener('excel-history-state', handleHistoryState)
+    return () => {
+      window.removeEventListener('excel-history-state', handleHistoryState)
     }
   }, [])
 
@@ -773,6 +794,45 @@ export default function App(): React.JSX.Element {
                     : activeTab}
               </span>
             </div>
+
+            {/* Global Excel History Bar */}
+            {excelHistoryState.hasChanges && (
+              <div className="flex items-center space-x-2 bg-slate-950/40 border border-white/5 rounded-xl px-2.5 py-1 animate-fadeIn">
+                <span className="text-[10px] text-slate-400 font-semibold mr-1">Değişiklik Geçmişi:</span>
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('excel-undo'))}
+                  disabled={!excelHistoryState.canUndo}
+                  className={`p-1.5 rounded-lg border transition ${
+                    excelHistoryState.canUndo
+                      ? 'bg-slate-900 border-white/10 text-slate-350 hover:bg-slate-800 hover:text-white cursor-pointer'
+                      : 'bg-slate-950/20 border-white/5 text-slate-650 cursor-not-allowed opacity-50'
+                  }`}
+                  title="Geri Al (Ctrl + Z)"
+                >
+                  <Undo2 className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('excel-redo'))}
+                  disabled={!excelHistoryState.canRedo}
+                  className={`p-1.5 rounded-lg border transition ${
+                    excelHistoryState.canRedo
+                      ? 'bg-slate-900 border-white/10 text-slate-350 hover:bg-slate-800 hover:text-white cursor-pointer'
+                      : 'bg-slate-950/20 border-white/5 text-slate-650 cursor-not-allowed opacity-50'
+                  }`}
+                  title="İleri Al (Ctrl + Y)"
+                >
+                  <Redo2 className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('excel-save'))}
+                  className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-emerald-600 border border-emerald-500 text-white hover:bg-emerald-500 transition shadow-lg shadow-emerald-600/15 cursor-pointer font-bold text-[10px]"
+                  title="Değişiklikleri Veritabanına Kaydet (Ctrl + S)"
+                >
+                  <Save className="h-3.5 w-3.5" />
+                  <span>Tabloyu Kaydet</span>
+                </button>
+              </div>
+            )}
 
             <div className="flex items-center space-x-3 text-[10px]">
               {/* Global Landowner Profile Search */}
