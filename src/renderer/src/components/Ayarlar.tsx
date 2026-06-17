@@ -433,7 +433,7 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
                 type="button"
                 className="flex items-center space-x-2 px-5 py-2.5 rounded-xl border border-indigo-500 font-semibold bg-indigo-600 text-white shadow-lg shadow-indigo-600/15 cursor-default"
               >
-                <span>2 - Meravnden Gelen Fişe Göre (Fiş No- Fiş Seri No Örn: 250-5) [Aktif]</span>
+                <span>2 - Meravdan Gelen Fişe Göre (Fiş No- Fiş Seri No Örn: 250-5) [Aktif]</span>
               </button>
             </div>
 
@@ -441,15 +441,27 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
               <strong>💡 Yöntem Bilgisi:</strong> Bu yöntem hangi arazinin sulandığını kaydetmeye gerek duymadan, Meravnden gelen fiş numarası ve malik bilgileriyle hızlıca işlem yapmak için idealdir. Özellikle küçük kurumlarda/yerlerde son derece kullanışlıdır.
               <br />
               <span className="block mt-2 text-slate-400">
-                Gelişmiş taşınmaz/arazi ilişkili takip gereksinimleri ve daha kapsamlı yönetim özellikleri için 
+                Gelişmiş taşınmaz ilişkili takip, muhasebe ve cari işlemleri içeren 
                 <a 
                   href="https://github.com/ilyasbozdemir/arazi-kanal-suyu-takip-app-pro" 
                   target="_blank" 
                   rel="noreferrer noopener" 
-                  className="text-indigo-400 hover:text-indigo-300 underline font-semibold ml-1"
+                  className="text-indigo-400 hover:text-indigo-300 underline font-semibold mx-1"
                 >
                   arazi-kanal-suyu-takip-app-pro
-                </a> repomuzu kullanabilirsiniz. Bu proje temel (basic) düzey takip için tasarlanmıştır.
+                </a> 
+                sürümü SQLite tabanlı olup, <strong>GNU GPL v3</strong> lisansı ile tamamen <strong>ücretsizdir</strong>.
+              </span>
+              <span className="block mt-2 text-slate-400">
+                Merkezi sunucu (server) kurulumu, sahadaki personellerin tablet ile sisteme uzaktan bağlanması ve anlık veri senkronizasyonu gibi daha gelişmiş kurumsal çözümler için lütfen 
+                <a 
+                  href="https://github.com/ilyasbozdemir" 
+                  target="_blank" 
+                  rel="noreferrer noopener" 
+                  className="text-indigo-400 hover:text-indigo-300 underline font-semibold mx-1"
+                >
+                  geliştirici ile iletişime geçiniz.
+                </a>
               </span>
             </div>
           </div>
