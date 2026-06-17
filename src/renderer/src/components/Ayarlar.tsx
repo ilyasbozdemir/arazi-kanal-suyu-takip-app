@@ -433,8 +433,24 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
                 type="button"
                 className="flex items-center space-x-2 px-5 py-2.5 rounded-xl border border-indigo-500 font-semibold bg-indigo-600 text-white shadow-lg shadow-indigo-600/15 cursor-default"
               >
-                <span>2 - Su Bekçisinden Gelen Fişe Göre (Fiş No- Fiş Seri No Örn: 250-5) [Aktif]</span>
+                <span>2 - Meravnden Gelen Fişe Göre (Fiş No- Fiş Seri No Örn: 250-5) [Aktif]</span>
               </button>
+            </div>
+
+            <div className="p-3.5 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-xs text-indigo-300 leading-relaxed max-w-3xl mt-3 animate-fadeIn">
+              <strong>💡 Yöntem Bilgisi:</strong> Bu yöntem hangi arazinin sulandığını kaydetmeye gerek duymadan, Meravnden gelen fiş numarası ve malik bilgileriyle hızlıca işlem yapmak için idealdir. Özellikle küçük kurumlarda/yerlerde son derece kullanışlıdır.
+              <br />
+              <span className="block mt-2 text-slate-400">
+                Gelişmiş taşınmaz/arazi ilişkili takip gereksinimleri ve daha kapsamlı yönetim özellikleri için 
+                <a 
+                  href="https://github.com/ilyasbozdemir/arazi-kanal-suyu-takip-app-pro" 
+                  target="_blank" 
+                  rel="noreferrer noopener" 
+                  className="text-indigo-400 hover:text-indigo-300 underline font-semibold ml-1"
+                >
+                  arazi-kanal-suyu-takip-app-pro
+                </a> repomuzu kullanabilirsiniz. Bu proje temel (basic) düzey takip için tasarlanmıştır.
+              </span>
             </div>
           </div>
 
@@ -500,6 +516,7 @@ export default function Ayarlar({ onSettingsSaved }: AyarlarProps): React.JSX.El
                 <Building className="absolute left-3 top-3 h-4.5 w-4.5 text-slate-500" />
                 <input
                   type="text"
+                  autoFocus
                   placeholder="Örn: Akçaören Tarımsal Sulama Birliği"
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl glass-input font-medium"
                   value={name}

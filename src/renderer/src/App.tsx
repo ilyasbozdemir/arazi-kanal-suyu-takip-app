@@ -941,7 +941,7 @@ export default function App(): React.JSX.Element {
                   className="flex flex-col items-start p-4 bg-slate-800/80 hover:bg-emerald-600/20 border-2 border-transparent hover:border-emerald-500 rounded-2xl text-left transition group cursor-pointer w-full"
                 >
                   <span className="font-bold text-slate-200 group-hover:text-white flex items-center gap-2 text-lg">
-                    <Receipt className="h-5 w-5 text-emerald-400" />2 - Su Bekçisinden Gelen Fişe
+                    <Receipt className="h-5 w-5 text-emerald-400" />2 - Meravnden Gelen Fişe
                     Göre (Aktif)
                   </span>
                   <span className="text-xs text-slate-450 mt-2">
