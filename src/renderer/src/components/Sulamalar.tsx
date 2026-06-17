@@ -29,6 +29,21 @@ const turkishToLower = (str: string): string => {
     .toLowerCase()
 }
 
+const formatAbbreviatedCurrency = (amount: number): string => {
+  if (amount === null || amount === undefined) return '0 ₺'
+  if (amount >= 1000000) {
+    const val = Math.floor((amount / 1000000) * 100) / 100
+    const formatted = val.toString().replace(/\.?0+$/, '')
+    return `${formatted}m ₺`
+  }
+  if (amount >= 1000) {
+    const val = Math.floor((amount / 1000) * 100) / 100
+    const formatted = val.toString().replace(/\.?0+$/, '')
+    return `${formatted}k ₺`
+  }
+  return `${amount.toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ₺`
+}
+
 interface Sulama {
   id: number
   tasinmaz_id: number | null
@@ -1139,10 +1154,10 @@ export default function Sulamalar({
                             {s.sulama_suresi_saat} sa
                           </div>
                           <div
-                            className="col-span-1 text-right font-medium text-white truncate text-xs"
-                            title={`₺ ${s.ucret}`}
+                            className="col-span-1 text-right font-medium text-white truncate text-xs cursor-help"
+                            title={`₺ ${s.ucret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`}
                           >
-                            ₺{s.ucret.toLocaleString('tr-TR', { minimumFractionDigits: 0 })}
+                            {formatAbbreviatedCurrency(s.ucret)}
                           </div>
                           <div className="col-span-2 text-center">
                             <span
@@ -1364,7 +1379,12 @@ export default function Sulamalar({
                   {totalUnpaidAmount > 0 ? (
                     <div className="px-2.5 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-lg text-[10px] flex items-center justify-between font-semibold">
                       <span>⚠ Ödenmemiş Borç:</span>
-                      <span>₺{totalUnpaidAmount.toLocaleString('tr-TR')} ({unpaidSlips.length} Fiş)</span>
+                      <span 
+                        className="cursor-help"
+                        title={`₺ ${totalUnpaidAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`}
+                      >
+                        {formatAbbreviatedCurrency(totalUnpaidAmount)} ({unpaidSlips.length} Fiş)
+                      </span>
                     </div>
                   ) : (
                     <div className="px-2.5 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg text-[10px] font-semibold">
@@ -1383,7 +1403,12 @@ export default function Sulamalar({
                               {new Date(slip.sulama_tarihi).toLocaleDateString('tr-TR')} | {slip.tasinmaz_id ? `${slip.ada || '-'}-${slip.parsel || '-'}` : `${slip.fis_no || '-'}-${slip.seri_no || '-'}`} ({slip.sulama_suresi_saat} sa)
                             </span>
                             <div className="flex items-center space-x-1.5">
-                              <span className="font-semibold text-slate-200">₺{slip.ucret}</span>
+                              <span 
+                                className="font-semibold text-slate-200 cursor-help"
+                                title={`₺ ${slip.ucret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`}
+                              >
+                                {formatAbbreviatedCurrency(slip.ucret)}
+                              </span>
                               <span className={`px-1 py-0.5 rounded text-[8px] font-bold uppercase ${
                                 slip.odeme_durumu === 'Ödendi' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
                               }`}>
@@ -1528,8 +1553,13 @@ export default function Sulamalar({
                             <span className="text-slate-450 font-mono text-[9px]">
                               {slip.ada || '-'}-{slip.parsel || '-'}
                             </span>
-                            <div className="flex items-center space-x-1.5 font-bold">
-                              <span className="text-slate-200">₺{slip.ucret}</span>
+                             <div className="flex items-center space-x-1.5 font-bold">
+                              <span 
+                                className="text-slate-200 cursor-help"
+                                title={`₺ ${slip.ucret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`}
+                              >
+                                {formatAbbreviatedCurrency(slip.ucret)}
+                              </span>
                               <span className={`px-1 py-0.5 rounded text-[8px] uppercase ${
                                 slip.odeme_durumu === 'Ödendi' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
                               }`}>{slip.odeme_durumu}</span>
