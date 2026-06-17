@@ -199,6 +199,7 @@ export default function Sulamalar({
   const [editingId, setEditingId] = useState<number | null>(null)
   const [showPrintModal, setShowPrintModal] = useState<Sulama | null>(null)
   const [showFormPanel, setShowFormPanel] = useState(false)
+  const [isBorclandirma, setIsBorclandirma] = useState(false)
 
   // Institution settings for printing
   const [kurumAdi, setKurumAdi] = useState('Arazi Kanal Suyu Takip Programı')
@@ -364,7 +365,7 @@ export default function Sulamalar({
     }
   }, [newRow.sulama_suresi_saat, saatUcreti, isCalculated])
 
-  // Save/Update Handler (Standard Mode)
+  // Save/Update Handler (Standard Mode + Borçlandırma)
   const handleSave = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
     setError('')
@@ -381,13 +382,19 @@ export default function Sulamalar({
       return
     }
 
-    if (!gorevliId) {
+    // Borçlandırma modunda görevli zorunlu değil, sulama süresi 0
+    if (!isBorclandirma && !gorevliId) {
       setError('Lütfen bir görevli seçin.')
       return
     }
 
-    const hours = parseFloat(sulamaSuresiSaat)
-    if (isNaN(hours) || hours <= 0) {
+    if (isBorclandirma && !aciklama.trim()) {
+      setError('Borçlandırma girişi için açıklama / borç sebebi zorunludur.')
+      return
+    }
+
+    const hours = isBorclandirma ? 0 : parseFloat(sulamaSuresiSaat)
+    if (!isBorclandirma && (isNaN(hours) || hours <= 0)) {
       setError('Geçerli bir sulama süresi (saat) girin.')
       return
     }
@@ -427,6 +434,16 @@ export default function Sulamalar({
         finalTasinmazId = insertRes.lastInsertRowid
       }
 
+      // Borçlandırma modunda ilk aktif görevliyi fallback olarak kullan
+      const finalGorevliId = isBorclandirma
+        ? (gorevliler[0]?.id ?? 1)
+        : parseInt(gorevliId)
+
+      // Borçlandırma girişlerinde aciklama başına etiket ekle
+      const finalAciklama = isBorclandirma
+        ? `[BORÇLANDIRMA] ${aciklama.trim()}`
+        : aciklama.trim()
+
       if (editingId) {
         // Update
         await window.api.dbRun(
@@ -435,12 +452,12 @@ export default function Sulamalar({
            WHERE id = ?`,
           [
             finalTasinmazId,
-            parseInt(gorevliId),
+            finalGorevliId,
             sulamaTarihi,
             hours,
             fee,
             odemeDurumu,
-            aciklama.trim(),
+            finalAciklama,
             editingId
           ]
         )
@@ -451,12 +468,12 @@ export default function Sulamalar({
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
           [
             finalTasinmazId,
-            parseInt(gorevliId),
+            finalGorevliId,
             sulamaTarihi,
             hours,
             fee,
             odemeDurumu,
-            aciklama.trim()
+            finalAciklama
           ]
         )
       }
@@ -972,21 +989,16 @@ export default function Sulamalar({
 
           {/* Standard Form Panel */}
           {showFormPanel && (
-            <div className="glass-card p-6 rounded-2xl h-fit border border-indigo-500/10 animate-in slide-in-from-right duration-250">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Clock className="h-5 w-5 text-indigo-400" />
-                {editingId ? 'Fişi Düzenle' : 'Yeni Fiş Girişi'}
+            <div className={`glass-card p-6 rounded-2xl h-fit border animate-in slide-in-from-right duration-250 ${
+              isBorclandirma ? 'border-amber-500/20' : 'border-indigo-500/10'
+            }`}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                {isBorclandirma
+                  ? <><span className="text-amber-400">⚠</span>{editingId ? ' Borç Kaydını Düzenle' : ' Borçlandırma Girişi'}</>
+                  : <><Clock className="h-4 w-4 text-indigo-400" />{editingId ? ' Fişi Düzenle' : ' Yeni Fiş Girişi'}</>
+                }
               </h3>
-              {editingId && (
-                <button
-                  onClick={resetForm}
-                  className="text-slate-405 hover:text-slate-200"
-                  title="İptal Et"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              )}
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => {
@@ -1001,6 +1013,40 @@ export default function Sulamalar({
               </div>
             </div>
 
+            {/* Mode Toggle */}
+            {!editingId && (
+              <div className="flex rounded-xl overflow-hidden border border-slate-700/50 mb-4 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => { setIsBorclandirma(false); setIsCalculated(true); setUcret(''); setSulamaSuresiSaat('') }}
+                  className={`flex-1 py-2 transition ${
+                    !isBorclandirma
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-slate-900 text-slate-400 hover:bg-slate-800'
+                  }`}
+                >
+                  💧 Normal Fiş
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setIsBorclandirma(true); setIsCalculated(false); setSulamaSuresiSaat('0') }}
+                  className={`flex-1 py-2 transition ${
+                    isBorclandirma
+                      ? 'bg-amber-600 text-white'
+                      : 'bg-slate-900 text-slate-400 hover:bg-slate-800'
+                  }`}
+                >
+                  📋 Borçlandırma
+                </button>
+              </div>
+            )}
+
+            {isBorclandirma && (
+              <div className="mb-4 p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[10px] text-amber-300 leading-relaxed">
+                Eski borç, sayaç farkı veya manuel borç kaydı için kullanın. Sulama süresi gerekmez. <strong>Açıklama zorunludur.</strong>
+              </div>
+            )}
+
             <form onSubmit={handleSave} className="space-y-4 text-xs">
               {error && (
                 <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-start space-x-2 text-rose-400 text-xs">
@@ -1010,7 +1056,8 @@ export default function Sulamalar({
               )}
 
               {/* Top/Batch Settings: Supervisor & Date */}
-              <div className="grid grid-cols-2 gap-3 pb-3 border-b border-slate-800/60 bg-indigo-950/15 p-3.5 rounded-xl">
+              <div className={`grid gap-3 pb-3 border-b border-slate-800/60 bg-indigo-950/15 p-3.5 rounded-xl ${isBorclandirma ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                {!isBorclandirma && (
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-indigo-300 uppercase tracking-wider block">
                     Sulama Sorumlusu (Merav) *
@@ -1020,7 +1067,7 @@ export default function Sulamalar({
                     className="w-full px-2 py-1.5 rounded-lg bg-slate-900 border border-indigo-500/30 text-xs font-bold text-slate-200 outline-none focus:border-indigo-400 transition cursor-pointer"
                     value={gorevliId}
                     onChange={(e) => setGorevliId(e.target.value)}
-                    required
+                    required={!isBorclandirma}
                   >
                     <option className="bg-slate-950 text-slate-400 text-xs" value="">
                       -- Görevli Seçin --
@@ -1032,6 +1079,7 @@ export default function Sulamalar({
                     ))}
                   </select>
                 </div>
+                )}
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-indigo-300 uppercase tracking-wider block">
                     Tarih *
@@ -1045,6 +1093,7 @@ export default function Sulamalar({
                   />
                 </div>
               </div>
+
 
               {/* Hızlı Malik / Fiş Arama */}
               <div className="space-y-1 pb-3 border-b border-slate-800/60">
@@ -1175,7 +1224,8 @@ export default function Sulamalar({
                 </div>
               )}
 
-              {/* Süre (Saat) */}
+              {/* Süre (Saat) - Normal fiş modunda göster */}
+              {!isBorclandirma && (
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-indigo-400" />
@@ -1191,6 +1241,7 @@ export default function Sulamalar({
                   required
                 />
               </div>
+              )}
 
               {/* Calculations Area */}
               <div className="bg-indigo-950/20 border border-indigo-500/10 p-3 rounded-xl space-y-3">
