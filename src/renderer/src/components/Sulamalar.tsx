@@ -246,7 +246,7 @@ export default function Sulamalar({
         SELECT s.*, t.tapu_sahibi, t.ada, t.parsel, t.alan_m2, t.mahalle_koy, t.kanal_adi,
                g.ad_soyad, g.gorev
         FROM sulamalar s
-        JOIN tasinmazlar t ON s.tasinmaz_id = t.id
+        LEFT JOIN tasinmazlar t ON s.tasinmaz_id = t.id
         JOIN gorevliler g ON s.gorevli_id = g.id
         ORDER BY s.sulama_tarihi DESC, s.id DESC
       `)
@@ -544,10 +544,7 @@ export default function Sulamalar({
 
   // Quick Insert (Excel Mode bottom row)
   const handleAddExcelRow = async (): Promise<void> => {
-    if (!newRow.tasinmaz_id) {
-      alert('Lütfen bir taşınmaz seçin.')
-      return
-    }
+    // tasinmaz_id artık zorunlu değil — seçilmemişse NULL kaydedilir
     if (!newRow.gorevli_id) {
       alert('Lütfen bir görevli seçin.')
       return
@@ -564,11 +561,12 @@ export default function Sulamalar({
     }
 
     try {
+      const tasinmazIdVal = newRow.tasinmaz_id ? parseInt(newRow.tasinmaz_id) : null
       await window.api.dbRun(
         `INSERT INTO sulamalar (tasinmaz_id, gorevli_id, sulama_tarihi, sulama_suresi_saat, ucret, odeme_durumu, aciklama) 
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
-          parseInt(newRow.tasinmaz_id),
+          tasinmazIdVal,
           parseInt(newRow.gorevli_id),
           newRow.sulama_tarihi,
           hours,
