@@ -391,11 +391,16 @@ export default function KisiProfil({ ownerName }: KisiProfilProps): React.JSX.El
                     </span>
                     <span>Alan: {p.alan_m2 > 0 ? `${p.alan_m2} m²` : '-'}</span>
                   </div>
-                  {p.su_hakki && (
-                    <div className="text-[9px] text-cyan-400 font-bold bg-cyan-500/10 px-1.5 py-0.5 rounded w-fit uppercase tracking-wider">
-                      Su Hakkı: {p.su_hakki}
+                  <div className="flex items-center gap-2 flex-wrap pt-0.5">
+                    <div className={`text-[9px] font-bold px-1.5 py-0.5 rounded w-fit uppercase tracking-wider flex items-center gap-1 ${
+                      p.su_hakki
+                        ? 'text-cyan-400 bg-cyan-500/10 border border-cyan-500/20'
+                        : 'text-slate-600 bg-slate-800/40 border border-slate-700/30'
+                    }`}>
+                      <span>💧</span>
+                      <span>Aylık Su Hakkı: {p.su_hakki || 'Tanımsız'}</span>
                     </div>
-                  )}
+                  </div>
                 </div>
               ))}
             </div>
