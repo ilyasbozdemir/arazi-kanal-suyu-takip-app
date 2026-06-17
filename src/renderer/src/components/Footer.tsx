@@ -80,7 +80,7 @@ export function Footer(): React.JSX.Element {
 
             <div className="p-1.5 flex flex-col gap-0.5">
               <button
-                onClick={() => openExternal('https://github.com/ilyasbozdemir/dt-desktop-app')}
+                onClick={() => openExternal('https://github.com/ilyasbozdemir/arazi-kanal-suyu-takip-app')}
                 className="flex items-center gap-2 w-full p-2 text-sm text-slate-600 dark:text-slate-350 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors font-semibold cursor-pointer"
               >
                 <Star className="w-3.5 h-3.5 text-amber-500 animate-pulse shrink-0" />
@@ -101,7 +101,7 @@ export function Footer(): React.JSX.Element {
 
               <button
                 onClick={() =>
-                  openExternal('https://github.com/ilyasbozdemir/dt-desktop-app/issues')
+                  openExternal('https://github.com/ilyasbozdemir/arazi-kanal-suyu-takip-app/issues')
                 }
                 className="flex items-center gap-2 w-full p-2 text-sm text-slate-600 dark:text-slate-350 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors cursor-pointer"
               >

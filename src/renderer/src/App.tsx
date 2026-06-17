@@ -864,7 +864,7 @@ export default function App(): React.JSX.Element {
 
               <div className="w-full flex flex-col gap-2 pt-2 text-xs">
                 <a
-                  href="https://github.com/ilyasbozdemir/dt-desktop-app"
+                  href="https://github.com/ilyasbozdemir/arazi-kanal-suyu-takip-app"
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center justify-between p-3 bg-slate-800 hover:bg-indigo-950/20 hover:border-indigo-500/30 border border-transparent rounded-xl text-slate-300 hover:text-indigo-400 transition"
@@ -884,7 +884,7 @@ export default function App(): React.JSX.Element {
                 </a>
 
                 <a
-                  href="https://github.com/ilyasbozdemir/dt-desktop-app/issues"
+                  href="https://github.com/ilyasbozdemir/arazi-kanal-suyu-takip-app/issues"
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center justify-between p-3 bg-slate-800 hover:bg-indigo-950/20 hover:border-indigo-500/30 border border-transparent rounded-xl text-slate-350 hover:text-indigo-400 transition"
