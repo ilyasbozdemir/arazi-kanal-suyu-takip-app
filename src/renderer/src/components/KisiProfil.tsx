@@ -412,44 +412,62 @@ export default function KisiProfil({ ownerName }: KisiProfilProps): React.JSX.El
         <div className="glass-card p-5 rounded-2xl h-fit space-y-4">
           <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
             <Layers className="h-4 w-4 text-indigo-400" />
-            Kayıtlı Taşınmaz Varlığı ({properties.length})
+            Kayıtlı Taşınmaz Varlığı ({properties.filter(p => !(p.ada === '' && p.parsel === '' && p.alan_m2 === 0 && p.mahalle_koy === '')).length})
           </h3>
 
-          {properties.length === 0 ? (
-            <div className="text-center py-6 text-slate-550 text-xs">
-              Bu kişi adına tanımlı taşınmaz bulunamadı.
-            </div>
-          ) : (
-            <div className="space-y-2 max-h-96 overflow-y-auto pr-1 scrollbar-thin">
-              {properties.map((p) => (
-                <div key={p.id} className="p-3 bg-slate-900/40 border border-white/5 rounded-xl space-y-1.5">
-                  <div className="flex justify-between items-center text-xs font-bold text-white">
-                    <span className="font-mono text-indigo-300">Ada/Parsel: {p.ada}-{p.parsel}</span>
-                    <span className="text-[10px] text-slate-400 font-sans">
-                      {p.mahalle_koy || 'Bilinmeyen Mahalle'}{p.mevki ? ` (${p.mevki})` : ''}
+          {(() => {
+            const realProperties = properties.filter(
+              (p) => !(p.ada === '' && p.parsel === '' && p.alan_m2 === 0 && p.mahalle_koy === '')
+            )
+
+            if (realProperties.length === 0) {
+              return (
+                <div className="space-y-3">
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[11px] rounded-xl leading-relaxed flex items-start gap-1.5">
+                    <AlertCircle className="h-4 w-4 mt-0.5 shrink-0 text-amber-400" />
+                    <span>
+                      Bu kayıt, meravların getirdiği sulama fişleri üzerinden (dijital takip yöntemiyle) oluşturulduğu ve fiş üzerinde ada, parsel veya mevki bilgisi bulunmadığı için resmi taşınmaz ilişkisi kurulamamıştır.
                     </span>
                   </div>
-                  <div className="flex justify-between text-[10px] text-slate-500 flex-wrap gap-y-1">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3 text-slate-600" />
-                      Kanal: {p.kanal_adi || '-'}
-                    </span>
-                    <span>Alan: {p.alan_m2 > 0 ? `${p.alan_m2} m²` : '-'}</span>
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap pt-0.5">
-                    <div className={`text-[9px] font-bold px-1.5 py-0.5 rounded w-fit uppercase tracking-wider flex items-center gap-1 ${
-                      p.su_hakki
-                        ? 'text-cyan-400 bg-cyan-500/10 border border-cyan-500/20'
-                        : 'text-slate-600 bg-slate-800/40 border border-slate-700/30'
-                    }`}>
-                      <span>💧</span>
-                      <span>Aylık Su Hakkı: {p.su_hakki || 'Tanımsız'}</span>
-                    </div>
+                  <div className="text-center py-6 text-slate-500 text-xs italic font-medium">
+                    Taşınmaz Eklenmedi
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+              )
+            }
+
+            return (
+              <div className="space-y-2 max-h-96 overflow-y-auto pr-1 scrollbar-thin">
+                {realProperties.map((p) => (
+                  <div key={p.id} className="p-3 bg-slate-900/40 border border-white/5 rounded-xl space-y-1.5">
+                    <div className="flex justify-between items-center text-xs font-bold text-white">
+                      <span className="font-mono text-indigo-300">Ada/Parsel: {p.ada}-{p.parsel}</span>
+                      <span className="text-[10px] text-slate-400 font-sans">
+                        {p.mahalle_koy || 'Bilinmeyen Mahalle'}{p.mevki ? ` (${p.mevki})` : ''}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-[10px] text-slate-500 flex-wrap gap-y-1">
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3 text-slate-600" />
+                        Kanal: {p.kanal_adi || '-'}
+                      </span>
+                      <span>Alan: {p.alan_m2 > 0 ? `${p.alan_m2} m²` : '-'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap pt-0.5">
+                      <div className={`text-[9px] font-bold px-1.5 py-0.5 rounded w-fit uppercase tracking-wider flex items-center gap-1 ${
+                        p.su_hakki
+                          ? 'text-cyan-400 bg-cyan-500/10 border border-cyan-500/20'
+                          : 'text-slate-600 bg-slate-800/40 border border-slate-700/30'
+                      }`}>
+                        <span>💧</span>
+                        <span>Aylık Su Hakkı: {p.su_hakki || 'Tanımsız'}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
         </div>
 
         {/* 4. Right Panel: Slips history logs */}

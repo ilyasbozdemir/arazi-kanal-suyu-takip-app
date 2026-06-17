@@ -1317,7 +1317,7 @@ export default function Sulamalar({
               </div>
             )}
 
-            <form onSubmit={(e) => { addTab('Sulamalar'); handleSave(e); }} className="space-y-4 text-xs">
+            <form onSubmit={handleSave} className="space-y-4 text-xs">
               {error && (
                 <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-start space-x-2 text-rose-400 text-xs">
                   <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
