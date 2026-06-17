@@ -13,7 +13,9 @@ import {
   Grid,
   FormInput,
   Plus,
-  User
+  User,
+  Undo2,
+  Redo2
 } from 'lucide-react'
 
 const turkishToLower = (str: string): string => {
@@ -208,6 +210,11 @@ export default function Sulamalar({
   onViewModeChange
 }: SulamalarProps): React.JSX.Element {
   const [sulamalar, setSulamalar] = useState<Sulama[]>([])
+  const [originalSulamalar, setOriginalSulamalar] = useState<Sulama[]>([])
+  const [undoStack, setUndoStack] = useState<Sulama[][]>([])
+  const [redoStack, setRedoStack] = useState<Sulama[][]>([])
+  const [modifiedIds, setModifiedIds] = useState<Set<number>>(new Set())
+  const [hasExcelChanges, setHasExcelChanges] = useState<boolean>(false)
   const [tasinmazlar, setTasinmazlar] = useState<Tasinmaz[]>([])
   const [gorevliler, setGorevliler] = useState<Gorevli[]>([])
 
@@ -275,6 +282,7 @@ export default function Sulamalar({
         ORDER BY s.sulama_tarihi DESC, s.id DESC
       `)
       setSulamalar(slips)
+      setOriginalSulamalar(JSON.parse(JSON.stringify(slips)))
 
       // Load properties for dropdown
       const props = await window.api.dbQuery('SELECT * FROM tasinmazlar ORDER BY tapu_sahibi ASC')
@@ -492,72 +500,206 @@ export default function Sulamalar({
     }
   }
 
-  // Inline Row Update (Excel Mode)
-  const updateExcelRow = async (id: number, field: string, value: any): Promise<void> => {
-    try {
-      const row = sulamalar.find((s) => s.id === id)
-      if (!row) return
-
-      let updatedHours = row.sulama_suresi_saat
-      let updatedFee = row.ucret
-      let updatedGorevliId = row.gorevli_id
-      let updatedTarih = row.sulama_tarihi
-      let updatedOdeme = row.odeme_durumu
-      let updatedAciklama = row.aciklama
-      let updatedTapuSahibi = row.tapu_sahibi
-      let updatedFisNo = row.fis_no
-      let updatedSeriNo = row.seri_no
-
-      if (field === 'sulama_suresi_saat') {
-        updatedHours = parseFloat(value) || 0
-        if (isCalculated) {
-          const rate = parseFloat(saatUcreti) || 0
-          updatedFee = parseFloat((updatedHours * rate).toFixed(2))
+  // Recalculate which rows have changes relative to original database values
+  const recalculateChanges = (currentList: Sulama[], originalList: Sulama[]): void => {
+    const newModifiedIds = new Set<number>()
+    let changed = false
+    currentList.forEach((row) => {
+      const orig = originalList.find((o) => o.id === row.id)
+      if (orig) {
+        const fields = [
+          'sulama_tarihi',
+          'tapu_sahibi',
+          'fis_no',
+          'seri_no',
+          'gorevli_id',
+          'sulama_suresi_saat',
+          'ucret',
+          'odeme_durumu',
+          'aciklama'
+        ]
+        const isRowChanged = fields.some((f) => {
+          const val1 = row[f] === null || row[f] === undefined ? '' : row[f].toString()
+          const val2 = orig[f] === null || orig[f] === undefined ? '' : orig[f].toString()
+          return val1 !== val2
+        })
+        if (isRowChanged) {
+          newModifiedIds.add(row.id)
+          changed = true
         }
-      } else if (field === 'ucret') {
-        updatedFee = parseFloat(value) || 0
-      } else if (field === 'gorevli_id') {
-        updatedGorevliId = parseInt(value)
-      } else if (field === 'sulama_tarihi') {
-        updatedTarih = value
-      } else if (field === 'odeme_durumu') {
-        updatedOdeme = value
-      } else if (field === 'aciklama') {
-        updatedAciklama = value
-      } else if (field === 'tapu_sahibi') {
-        updatedTapuSahibi = value
-      } else if (field === 'fis_no') {
-        updatedFisNo = value
-      } else if (field === 'seri_no') {
-        updatedSeriNo = value
+      }
+    })
+    setModifiedIds(newModifiedIds)
+    setHasExcelChanges(changed)
+  }
+
+  // Inline Row Update (Excel Mode - local memory only)
+  const updateExcelRow = (id: number, field: string, value: any): void => {
+    // 1. Snapshot the current state to undoStack
+    const currentSnapshot = JSON.parse(JSON.stringify(sulamalar))
+    setUndoStack((prev) => [...prev, currentSnapshot])
+    // 2. Clear redoStack
+    setRedoStack([])
+
+    // 3. Update state locally
+    setSulamalar((prevSulamalar) => {
+      const updated = prevSulamalar.map((row) => {
+        if (row.id !== id) return row
+
+        const updatedRow = { ...row }
+
+        let updatedHours = row.sulama_suresi_saat
+        let updatedFee = row.ucret
+        let updatedGorevliId = row.gorevli_id
+        let updatedTarih = row.sulama_tarihi
+        let updatedOdeme = row.odeme_durumu
+        let updatedAciklama = row.aciklama
+        let updatedTapuSahibi = row.tapu_sahibi
+        let updatedFisNo = row.fis_no
+        let updatedSeriNo = row.seri_no
+
+        if (field === 'sulama_suresi_saat') {
+          updatedHours = parseFloat(value) || 0
+          if (isCalculated) {
+            const rate = parseFloat(saatUcreti) || 0
+            updatedFee = parseFloat((updatedHours * rate).toFixed(2))
+          }
+        } else if (field === 'ucret') {
+          updatedFee = parseFloat(value) || 0
+        } else if (field === 'gorevli_id') {
+          updatedGorevliId = parseInt(value)
+        } else if (field === 'sulama_tarihi') {
+          updatedTarih = value
+        } else if (field === 'odeme_durumu') {
+          updatedOdeme = value
+        } else if (field === 'aciklama') {
+          updatedAciklama = value
+        } else if (field === 'tapu_sahibi') {
+          updatedTapuSahibi = value
+        } else if (field === 'fis_no') {
+          updatedFisNo = value
+        } else if (field === 'seri_no') {
+          updatedSeriNo = value
+        }
+
+        updatedRow.sulama_suresi_saat = updatedHours
+        updatedRow.ucret = updatedFee
+        updatedRow.gorevli_id = updatedGorevliId
+        updatedRow.sulama_tarihi = updatedTarih
+        updatedRow.odeme_durumu = updatedOdeme
+        updatedRow.aciklama = updatedAciklama
+        updatedRow.tapu_sahibi = updatedTapuSahibi
+        updatedRow.fis_no = updatedFisNo
+        updatedRow.seri_no = updatedSeriNo
+
+        return updatedRow
+      })
+
+      recalculateChanges(updated, originalSulamalar)
+      return updated
+    })
+  }
+
+  // Undo (Geri Al) Handler
+  const handleUndo = (): void => {
+    if (undoStack.length === 0) return
+    const prevSnapshot = undoStack[undoStack.length - 1]
+    const currentSnapshot = JSON.parse(JSON.stringify(sulamalar))
+
+    setUndoStack((prev) => prev.slice(0, -1))
+    setRedoStack((prev) => [...prev, currentSnapshot])
+    setSulamalar(prevSnapshot)
+    recalculateChanges(prevSnapshot, originalSulamalar)
+  }
+
+  // Redo (İleri Al) Handler
+  const handleRedo = (): void => {
+    if (redoStack.length === 0) return
+    const nextSnapshot = redoStack[redoStack.length - 1]
+    const currentSnapshot = JSON.parse(JSON.stringify(sulamalar))
+
+    setRedoStack((prev) => prev.slice(0, -1))
+    setUndoStack((prev) => [...prev, currentSnapshot])
+    setSulamalar(nextSnapshot)
+    recalculateChanges(nextSnapshot, originalSulamalar)
+  }
+
+  // Save Excel Changes to DB
+  const saveExcelChanges = async (): Promise<void> => {
+    if (!hasExcelChanges || modifiedIds.size === 0) return
+
+    try {
+      for (const id of modifiedIds) {
+        const row = sulamalar.find((s) => s.id === id)
+        if (!row) continue
+
+        await window.api.dbRun(
+          `UPDATE sulamalar 
+           SET tasinmaz_id = NULL, tapu_sahibi = ?, fis_no = ?, seri_no = ?, gorevli_id = ?, sulama_tarihi = ?, sulama_suresi_saat = ?, ucret = ?, odeme_durumu = ?, aciklama = ? 
+           WHERE id = ?`,
+          [
+            row.tapu_sahibi || '',
+            row.fis_no || '',
+            row.seri_no || '',
+            row.gorevli_id,
+            row.sulama_tarihi,
+            row.sulama_suresi_saat,
+            row.ucret,
+            row.odeme_durumu,
+            row.aciklama || '',
+            id
+          ]
+        )
       }
 
-      await window.api.dbRun(
-        `UPDATE sulamalar 
-         SET tasinmaz_id = NULL, tapu_sahibi = ?, fis_no = ?, seri_no = ?, gorevli_id = ?, sulama_tarihi = ?, sulama_suresi_saat = ?, ucret = ?, odeme_durumu = ?, aciklama = ? 
-         WHERE id = ?`,
-        [
-          updatedTapuSahibi,
-          updatedFisNo,
-          updatedSeriNo,
-          updatedGorevliId,
-          updatedTarih,
-          updatedHours,
-          updatedFee,
-          updatedOdeme,
-          updatedAciklama,
-          id
-        ]
-      )
+      if (window.api.saveFile) {
+        await window.api.saveFile()
+      }
 
       await loadData()
+
+      // Reset stacks
+      setUndoStack([])
+      setRedoStack([])
+      setModifiedIds(new Set())
+      setHasExcelChanges(false)
     } catch (e: any) {
-      console.error('Error updating excel row inline:', e)
+      console.error('Error saving Excel changes:', e)
+      alert('Değişiklikler kaydedilirken hata oluştu: ' + e.message)
     }
   }
 
+  // Keyboard Shortcuts Hook
+  useEffect(() => {
+    if (viewMode !== 'excel') return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isCtrl = e.ctrlKey || e.metaKey
+      if (isCtrl) {
+        if (e.key.toLowerCase() === 'z') {
+          e.preventDefault()
+          handleUndo()
+        } else if (e.key.toLowerCase() === 'y') {
+          e.preventDefault()
+          handleRedo()
+        } else if (e.key.toLowerCase() === 's') {
+          e.preventDefault()
+          saveExcelChanges()
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [viewMode, undoStack, redoStack, sulamalar, originalSulamalar, hasExcelChanges, modifiedIds])
+
   // Quick Insert (Excel Mode bottom row)
   const handleAddExcelRow = async (): Promise<void> => {
+    if (hasExcelChanges) {
+      await saveExcelChanges()
+    }
     if (!newRow.tapu_sahibi.trim()) {
       alert('Lütfen tapu sahibi adını girin.')
       return
@@ -646,6 +788,9 @@ export default function Sulamalar({
     if (!confirm) return
 
     try {
+      if (hasExcelChanges) {
+        await saveExcelChanges()
+      }
       await window.api.dbRun('DELETE FROM sulamalar WHERE id = ?', [id])
       await loadData()
       if (editingId === id) resetForm()
@@ -1380,6 +1525,60 @@ export default function Sulamalar({
       ) : (
         /* EXCEL GRID EDITING MODE */
         <div className="glass-card rounded-2xl flex-1 overflow-hidden flex flex-col p-4">
+          {/* Action Bar (Undo, Redo, Save) */}
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800/40 shrink-0">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider mr-2">Değişiklik Geçmişi:</span>
+              <button
+                onClick={handleUndo}
+                disabled={undoStack.length === 0}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer ${
+                  undoStack.length > 0
+                    ? 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 hover:text-white'
+                    : 'bg-slate-900/35 border-transparent text-slate-650 cursor-not-allowed'
+                }`}
+                title="Geri Al (Ctrl + Z)"
+              >
+                <Undo2 className="w-3.5 h-3.5" />
+                <span>Geri Al</span>
+              </button>
+              <button
+                onClick={handleRedo}
+                disabled={redoStack.length === 0}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer ${
+                  redoStack.length > 0
+                    ? 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 hover:text-white'
+                    : 'bg-slate-900/35 border-transparent text-slate-650 cursor-not-allowed'
+                }`}
+                title="İleri Al (Ctrl + Y)"
+              >
+                <Redo2 className="w-3.5 h-3.5" />
+                <span>İleri Al</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {hasExcelChanges && (
+                <span className="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-2.5 py-1 rounded border border-amber-400/20">
+                  {modifiedIds.size} satırda kaydedilmemiş değişiklik var
+                </span>
+              )}
+              <button
+                onClick={saveExcelChanges}
+                disabled={!hasExcelChanges}
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer shadow-lg ${
+                  hasExcelChanges
+                    ? 'bg-emerald-650 border-transparent text-white hover:bg-emerald-600 shadow-emerald-950/15'
+                    : 'bg-slate-900/35 border-transparent text-slate-650 cursor-not-allowed shadow-none'
+                }`}
+                title="Değişiklikleri Kaydet (Ctrl + S)"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>Kaydet</span>
+              </button>
+            </div>
+          </div>
+
           {/* Sticky Header */}
           <div className="overflow-x-auto shrink-0">
             <table className="w-full text-left border-collapse text-xs table-fixed min-w-[950px]">
