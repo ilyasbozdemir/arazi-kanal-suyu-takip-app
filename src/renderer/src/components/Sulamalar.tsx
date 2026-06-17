@@ -111,7 +111,7 @@ const renderReceiptContent = (s: Sulama, logo: string | null, name: string, biri
             <td className="p-2 font-bold text-black uppercase">{s.tapu_sahibi}</td>
           </tr>
           <tr className="border-b border-black">
-            <td className="p-2 bg-slate-50 font-bold border-r border-black">FİŞ NO - SERİ NO:</td>
+            <td className="p-2 bg-slate-50 font-bold border-r border-black">ADA - PARSEL:</td>
             <td className="p-2 font-mono font-bold text-black">
               {s.ada || '-'} - {s.parsel || '-'}
             </td>
@@ -749,7 +749,7 @@ export default function Sulamalar({
               }`}
             >
               <FormInput className="w-3.5 h-3.5" />
-              <span>Form Görünümü</span>
+              <span>Basit Düzey (Klasik Form)</span>
             </button>
 
             <button
@@ -761,7 +761,7 @@ export default function Sulamalar({
               }`}
             >
               <Grid className="w-3.5 h-3.5" />
-              <span>Excel Düzenleme Görünümü</span>
+              <span>İleri Seviye (Excel Tablo)</span>
             </button>
           </div>
         </div>
@@ -1127,7 +1127,7 @@ export default function Sulamalar({
                   {tasinmazlar.map((t) => (
                     <option
                       key={t.id}
-                      value={`${t.tapu_sahibi} - ${t.mahalle_koy || 'Mülk'} (Fiş No: ${t.ada || '-'}, Seri: ${t.parsel || '-'}) [ID:${t.id}]`}
+                      value={`${t.tapu_sahibi} - ${t.mahalle_koy || 'Mülk'} (Ada: ${t.ada || '-'}, Parsel: ${t.parsel || '-'}) [ID:${t.id}]`}
                     />
                   ))}
                 </datalist>
@@ -1137,7 +1137,7 @@ export default function Sulamalar({
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-slate-350 uppercase tracking-wider flex items-center gap-1.5">
                   <Grid className="w-3.5 h-3.5 text-indigo-400" />
-                  Fiş No - Seri No *
+                  Ada - Parsel *
                 </label>
                 <div className="relative">
                   <input
@@ -1150,7 +1150,7 @@ export default function Sulamalar({
                   />
                 </div>
                 <div className="text-[10px] text-slate-500 mt-1">
-                  Fiş numarasını ve serisini aralarında tire '-' olacak şekilde yazın.
+                  Ada ve parsel numarasını aralarında tire '-' olacak şekilde yazın.
                 </div>
               </div>
 

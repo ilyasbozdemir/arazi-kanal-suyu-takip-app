@@ -382,7 +382,7 @@ export default function Tasinmazlar(): React.JSX.Element {
               <Search className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Fiş No, Seri No, Tapu Sahibi ara..."
+                placeholder="Ada, Parsel, Tapu Sahibi ara..."
                 className="w-full pl-9 pr-3 py-2.5 rounded-xl glass-input text-xs"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -453,7 +453,7 @@ export default function Tasinmazlar(): React.JSX.Element {
             <div className="grid grid-cols-12 gap-2 border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider py-3 px-3">
               <div className="col-span-3">Tapu Sahibi</div>
               <div className="col-span-2">Köy / Mevki</div>
-              <div className="col-span-2 text-center">Fiş / Seri No</div>
+              <div className="col-span-2 text-center">Ada / Parsel</div>
               <div className="col-span-2 text-right">Alan / Su Hakkı</div>
               <div className="col-span-2">Kanal Adı</div>
               <div className="col-span-1 text-right">İşlemler</div>
@@ -623,11 +623,11 @@ export default function Tasinmazlar(): React.JSX.Element {
               </datalist>
             </div>
 
-            {/* Grid Fiş No / Seri No */}
+            {/* Grid Ada / Parsel */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-330 uppercase tracking-wider">
-                  Fiş No
+                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Ada
                 </label>
                 <input
                   type="text"
@@ -638,8 +638,8 @@ export default function Tasinmazlar(): React.JSX.Element {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-330 uppercase tracking-wider">
-                  Seri No
+                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Parsel
                 </label>
                 <input
                   type="text"
@@ -786,8 +786,8 @@ export default function Tasinmazlar(): React.JSX.Element {
           {/* Excel Header */}
           <div className="grid grid-cols-12 gap-1 border-b border-slate-800 bg-slate-950/80 px-2 py-2 text-xs font-bold text-slate-300">
             <div className="col-span-3">Tapu Sahibi</div>
-            <div className="col-span-1">Fiş No</div>
-            <div className="col-span-1">Seri No</div>
+            <div className="col-span-1">Ada</div>
+            <div className="col-span-1">Parsel</div>
             <div className="col-span-1 text-right">Alan (m²)</div>
             <div className="col-span-1">Mahalle/Köy</div>
             <div className="col-span-1">Mevki</div>
