@@ -13,9 +13,7 @@ import {
   Grid,
   FormInput,
   Plus,
-  User,
-  Undo2,
-  Redo2
+  User
 } from 'lucide-react'
 
 const turkishToLower = (str: string): string => {

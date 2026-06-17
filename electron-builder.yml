@@ -48,4 +48,4 @@ npmRebuild: false
 publish:
   provider: github
   owner: ilyasbozdemir
-  repo: arazi-kanal-suyu-takip-app
+  repo: arazi-kanal-suyu-takip-program-
