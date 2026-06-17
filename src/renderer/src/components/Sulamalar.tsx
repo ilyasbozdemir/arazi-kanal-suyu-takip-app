@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { useTabStore } from '../store/tabStore'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import {
   Search,
@@ -194,7 +195,9 @@ const renderReceiptContent = (s: Sulama, logo: string | null, name: string, biri
           </tr>
           <tr className="border-b border-black">
             <td className="p-2 bg-slate-50 font-bold border-r border-black">SULAMA SÜRESİ:</td>
-            <td className="p-2 text-black font-bold">{s.sulama_suresi_saat} Saat</td>
+            <td className="p-2 text-black font-bold">
+              {s.sulama_suresi_saat % 1 === 0 ? s.sulama_suresi_saat.toFixed(0) : s.sulama_suresi_saat.toFixed(1)} Saat
+            </td>
           </tr>
           <tr className="border-b border-black">
             <td className="p-2 bg-slate-50 font-bold border-r border-black">SAATLİK TARİFE:</td>
@@ -252,6 +255,7 @@ export default function Sulamalar({
   viewMode,
   onViewModeChange
 }: SulamalarProps): React.JSX.Element {
+  const { addTab } = useTabStore()
   const [sulamalar, setSulamalar] = useState<Sulama[]>([])
   const [originalSulamalar, setOriginalSulamalar] = useState<Sulama[]>([])
   const [undoStack, setUndoStack] = useState<Sulama[][]>([])
@@ -539,6 +543,7 @@ export default function Sulamalar({
 
       resetForm()
       await loadData()
+      addTab('profil', { owner: malikName })
     } catch (e: any) {
       console.error('Error saving slip:', e)
       setError('Kaydedilirken hata oluştu: ' + e.message)
@@ -841,6 +846,7 @@ export default function Sulamalar({
         ]
       )
 
+      const targetOwner = newRow.tapu_sahibi.trim()
       // Reset bottom row state
       setNewRow({
         tapu_sahibi: '',
@@ -855,6 +861,7 @@ export default function Sulamalar({
       })
 
       await loadData()
+      addTab('profil', { owner: targetOwner })
     } catch (e: any) {
       console.error('Error quick inserting excel row:', e)
       alert('Kaydedilirken hata oluştu.')
@@ -1191,7 +1198,7 @@ export default function Sulamalar({
                             {s.ad_soyad}
                           </div>
                           <div className="col-span-1 text-right text-indigo-300 whitespace-nowrap font-medium text-xs">
-                            {s.sulama_suresi_saat} sa
+                             {s.sulama_suresi_saat % 1 === 0 ? s.sulama_suresi_saat.toFixed(0) : s.sulama_suresi_saat.toFixed(1)} sa
                           </div>
                           <div
                             className="col-span-1 text-right font-medium text-white truncate text-xs cursor-help"
@@ -1310,7 +1317,7 @@ export default function Sulamalar({
               </div>
             )}
 
-            <form onSubmit={handleSave} className="space-y-4 text-xs">
+            <form onSubmit={(e) => { addTab('Sulamalar'); handleSave(e); }} className="space-y-4 text-xs">
               {error && (
                 <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-start space-x-2 text-rose-400 text-xs">
                   <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
@@ -1440,7 +1447,7 @@ export default function Sulamalar({
                         <div key={slip.id} className="flex flex-col gap-0.5 text-[10px] bg-slate-950/40 p-1.5 rounded-lg border border-white/5">
                           <div className="flex justify-between items-center">
                             <span className="text-slate-300 font-medium">
-                              {new Date(slip.sulama_tarihi).toLocaleDateString('tr-TR')} | {slip.tasinmaz_id ? `${slip.ada || '-'}-${slip.parsel || '-'}` : `${slip.fis_no || '-'}-${slip.seri_no || '-'}`} ({slip.sulama_suresi_saat} sa)
+                              {new Date(slip.sulama_tarihi).toLocaleDateString('tr-TR')} | {slip.tasinmaz_id ? `${slip.ada || '-'}-${slip.parsel || '-'}` : `${slip.fis_no || '-'}-${slip.seri_no || '-'}`} ({slip.sulama_suresi_saat % 1 === 0 ? slip.sulama_suresi_saat.toFixed(0) : slip.sulama_suresi_saat.toFixed(1)} sa)
                             </span>
                             <div className="flex items-center space-x-1.5">
                               <span 

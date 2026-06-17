@@ -100,7 +100,9 @@ const renderA5ReceiptContent = (s: any, logo: string | null, name: string, birim
           </tr>
           <tr className="border-b border-black">
             <td className="p-2 bg-slate-50 font-bold border-r border-black">SULAMA SÜRESİ:</td>
-            <td className="p-2 text-black font-bold">{s.sulama_suresi_saat} Saat</td>
+            <td className="p-2 text-black font-bold">
+              {s.sulama_suresi_saat % 1 === 0 ? s.sulama_suresi_saat.toFixed(0) : s.sulama_suresi_saat.toFixed(1)} Saat
+            </td>
           </tr>
           <tr className="border-b border-black">
             <td className="p-2 bg-slate-50 font-bold border-r border-black">SAATLİK TARİFE:</td>
@@ -223,6 +225,8 @@ export default function KisiProfil({ ownerName }: KisiProfilProps): React.JSX.El
 
   // Mark specific slip as paid
   const handleMarkAsPaid = async (id: number): Promise<void> => {
+    const isConfirmed = window.confirm('Bu sulama kaydını ödendi olarak işaretlemek istediğinize emin misiniz?')
+    if (!isConfirmed) return
     try {
       await window.api.dbRun("UPDATE sulamalar SET odeme_durumu = 'Ödendi' WHERE id = ?", [id])
       await loadData()
@@ -361,7 +365,9 @@ export default function KisiProfil({ ownerName }: KisiProfilProps): React.JSX.El
           </div>
           <div>
             <span className="text-[10px] text-slate-450 uppercase font-bold block">Toplam Süre</span>
-            <span className="text-lg font-extrabold text-white">{totalHours.toFixed(1)} sa</span>
+            <span className="text-lg font-extrabold text-white">
+              {totalHours % 1 === 0 ? totalHours.toFixed(0) : totalHours.toFixed(1)} sa
+            </span>
           </div>
         </div>
 
@@ -480,7 +486,9 @@ export default function KisiProfil({ ownerName }: KisiProfilProps): React.JSX.El
                       <td className="py-2 px-2 font-semibold text-slate-200">
                         {s.ada || '-'}-{s.parsel || '-'}
                       </td>
-                      <td className="py-2 px-2 text-right text-cyan-400 font-medium">{s.sulama_suresi_saat} sa</td>
+                      <td className="py-2 px-2 text-right text-cyan-400 font-medium">
+                        {s.sulama_suresi_saat % 1 === 0 ? s.sulama_suresi_saat.toFixed(0) : s.sulama_suresi_saat.toFixed(1)} sa
+                      </td>
                       <td className="py-2 px-2 text-right font-bold text-white">₺{s.ucret}</td>
                       <td className="py-2 px-2 text-center">
                         <span
@@ -717,7 +725,9 @@ export default function KisiProfil({ ownerName }: KisiProfilProps): React.JSX.El
                         <td className="p-2 border border-slate-300 font-mono">
                           {s.ada || '-'}-{s.parsel || '-'} ({s.mahalle_koy})
                         </td>
-                        <td className="p-2 border border-slate-300 text-right">{s.sulama_suresi_saat} sa</td>
+                        <td className="p-2 border border-slate-300 text-right">
+                          {s.sulama_suresi_saat % 1 === 0 ? s.sulama_suresi_saat.toFixed(0) : s.sulama_suresi_saat.toFixed(1)} sa
+                        </td>
                         <td className="p-2 border border-slate-300 text-right font-bold">
                           ₺{s.ucret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                         </td>
