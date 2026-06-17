@@ -44,6 +44,36 @@ const formatAbbreviatedCurrency = (amount: number): string => {
   return `${amount.toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ₺`
 }
 
+const ensureOwnerExists = async (ownerName: string): Promise<void> => {
+  const name = ownerName ? ownerName.trim() : ''
+  if (!name) return
+  try {
+    const existing = await window.api.dbQuery(
+      'SELECT id FROM tasinmazlar WHERE LOWER(TRIM(tapu_sahibi)) = LOWER(TRIM(?)) LIMIT 1',
+      [name]
+    )
+    if (!existing || existing.length === 0) {
+      await window.api.dbRun(
+        `INSERT INTO tasinmazlar (tapu_sahibi, ada, parsel, alan_m2, mahalle_koy, mevki, su_hakki, kanal_adi, aciklama) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          name,
+          '',
+          '',
+          0,
+          '',
+          '',
+          '',
+          '',
+          'Sulama fişi girişi sırasında otomatik oluşturulan malik/taşınmaz kaydı.'
+        ]
+      )
+    }
+  } catch (err) {
+    console.error('Error ensuring owner exists:', err)
+  }
+}
+
 interface Sulama {
   id: number
   tasinmaz_id: number | null
@@ -457,6 +487,8 @@ export default function Sulamalar({
     }
 
     try {
+      await ensureOwnerExists(malikName)
+
       // Borçlandırma modunda ilk aktif görevliyi fallback olarak kullan
       const finalGorevliId = isBorclandirma
         ? (gorevliler[0]?.id ?? 1)
@@ -646,6 +678,10 @@ export default function Sulamalar({
         const row = sulamalar.find((s) => s.id === id)
         if (!row) continue
 
+        if (row.tapu_sahibi) {
+          await ensureOwnerExists(row.tapu_sahibi)
+        }
+
         await window.api.dbRun(
           `UPDATE sulamalar 
            SET tasinmaz_id = NULL, tapu_sahibi = ?, fis_no = ?, seri_no = ?, gorevli_id = ?, sulama_tarihi = ?, sulama_suresi_saat = ?, ucret = ?, odeme_durumu = ?, aciklama = ? 
@@ -785,6 +821,10 @@ export default function Sulamalar({
     }
 
     try {
+      if (newRow.tapu_sahibi) {
+        await ensureOwnerExists(newRow.tapu_sahibi)
+      }
+
       await window.api.dbRun(
         `INSERT INTO sulamalar (tasinmaz_id, tapu_sahibi, fis_no, seri_no, gorevli_id, sulama_tarihi, sulama_suresi_saat, ucret, odeme_durumu, aciklama) 
          VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,

@@ -902,55 +902,58 @@ export default function App(): React.JSX.Element {
             <button
               onClick={() => setShowAboutModal(false)}
               className="absolute top-4 right-4 p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-lg transition cursor-pointer"
+              title="Kapat"
             >
               <X className="w-4 h-4" />
             </button>
 
             <div className="flex flex-col items-center text-center space-y-4">
-              <div className="p-4 bg-gradient-to-br from-indigo-500 to-cyan-500 rounded-3xl text-white shadow-xl shadow-indigo-500/10">
-                <Droplet className="w-10 h-10" />
-              </div>
+              {kurumLogo ? (
+                <div className="w-20 h-20 rounded-3xl overflow-hidden bg-slate-950 border border-white/5 flex items-center justify-center p-1.5 shadow-xl">
+                  <img src={kurumLogo} className="w-full h-full object-contain" alt="Kurum Logo" />
+                </div>
+              ) : (
+                <div className="p-4 bg-gradient-to-br from-indigo-500 to-cyan-500 rounded-3xl text-white shadow-xl shadow-indigo-500/10">
+                  <Droplet className="w-10 h-10" />
+                </div>
+              )}
 
               <div>
-                <h3 className="text-lg font-bold text-white">Arazi Kanal Suyu Asistanı</h3>
-                <p className="text-xs text-slate-450 mt-1">Sürüm v{appVersion}</p>
+                <h3 className="text-lg font-bold text-white">{kurumAdi}</h3>
+                <p className="text-xs text-slate-450 mt-1">Arazi Kanal Suyu Asistanı v{appVersion}</p>
               </div>
 
-              <div className="w-full text-[11px] text-slate-400 bg-slate-950/45 border border-white/5 rounded-2xl p-4 text-left leading-relaxed font-medium">
-                ⚠️ <strong>Sorumluluk Sınırı:</strong> Bu uygulama, arazi sulama takip süreçlerinizi
-                kolaylaştıran, verileri hızlıca kaydetmenizi ve makbuz/fiş üretmenizi sağlayan
-                yardımcı bir yazılımdır. Resmi/yasal bir sorumluluk üstlenmez.
+              <div className="w-full text-[11px] text-slate-405 bg-slate-950/45 border border-white/5 rounded-2xl p-4 text-left leading-relaxed font-medium">
+                💡 <strong>Açık Kaynak & Katkı:</strong> Bu proje açık kaynak kodlu olup geliştirilmeye devam etmektedir. Katkıda bulunmak için GitHub reposunu ziyaret edebilir, karşılaştığınız sorunlar için hata kaydı (issue) oluşturabilir veya doğrudan e-posta atabilirsiniz.
               </div>
 
-              <div className="w-full flex flex-col gap-2 pt-2 text-xs">
+              <div className="w-full flex flex-col gap-2 pt-1 text-xs">
                 <a
-                  href="https://github.com/ilyasbozdemir/arazi-kanal-suyu-takip-app"
+                  href="https://github.com/ilyasbozdemir/arazi-kanal-suyu-takip-program-"
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noreferrer noopener"
                   className="flex items-center justify-between p-3 bg-slate-800 hover:bg-indigo-950/20 hover:border-indigo-500/30 border border-transparent rounded-xl text-slate-300 hover:text-indigo-400 transition"
                 >
-                  <span className="font-bold flex items-center gap-2">⭐ GitHub Reposu</span>
-                  <span className="text-[10px] text-slate-500">Yıldız Ver</span>
+                  <span className="font-bold flex items-center gap-2">⭐ GitHub Proje Sayfası</span>
+                  <span className="text-[10px] text-slate-500">Katkıda Bulun</span>
                 </a>
 
                 <a
-                  href="https://ilyasbozdemir.dev"
+                  href="https://github.com/ilyasbozdemir/arazi-kanal-suyu-takip-program-/issues"
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noreferrer noopener"
                   className="flex items-center justify-between p-3 bg-slate-800 hover:bg-indigo-950/20 hover:border-indigo-500/30 border border-transparent rounded-xl text-slate-300 hover:text-indigo-400 transition"
                 >
-                  <span className="flex items-center gap-2">👨‍💻 Geliştirici: İlyas Bozdemir</span>
-                  <span className="text-[10px] text-slate-500">ilyasbozdemir.dev</span>
+                  <span className="flex items-center gap-2">🐛 Hata Kaydı (Issue) Aç</span>
+                  <span className="text-[10px] text-slate-500">Sorun Bildir</span>
                 </a>
 
                 <a
-                  href="https://github.com/ilyasbozdemir/arazi-kanal-suyu-takip-app/issues"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-between p-3 bg-slate-800 hover:bg-indigo-950/20 hover:border-indigo-500/30 border border-transparent rounded-xl text-slate-350 hover:text-indigo-400 transition"
+                  href="mailto:bozdemir.ib70@gmail.com"
+                  className="flex items-center justify-between p-3 bg-slate-800 hover:bg-indigo-950/20 hover:border-indigo-500/30 border border-transparent rounded-xl text-slate-300 hover:text-indigo-400 transition"
                 >
-                  <span className="flex items-center gap-2">🐛 Hata Bildir / Destek</span>
-                  <span className="text-[10px] text-slate-500">Destek</span>
+                  <span className="flex items-center gap-2">✉️ Geliştirici E-Posta</span>
+                  <span className="text-[10px] text-slate-500">E-Posta Gönder</span>
                 </a>
               </div>
             </div>

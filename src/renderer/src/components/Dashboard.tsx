@@ -35,6 +35,21 @@ interface TodayStats {
   totalUnpaid: number
 }
 
+const formatAbbreviatedCurrency = (amount: number): string => {
+  if (amount === null || amount === undefined) return '0 ₺'
+  if (amount >= 1000000) {
+    const val = Math.floor((amount / 1000000) * 100) / 100
+    const formatted = val.toString().replace(/\.?0+$/, '')
+    return `${formatted}m ₺`
+  }
+  if (amount >= 1000) {
+    const val = Math.floor((amount / 1000) * 100) / 100
+    const formatted = val.toString().replace(/\.?0+$/, '')
+    return `${formatted}k ₺`
+  }
+  return `${amount.toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ₺`
+}
+
 export default function Dashboard(): React.JSX.Element {
   const [stats, setStats] = useState<DashboardStats>({
     totalTasinmaz: 0,
@@ -218,8 +233,8 @@ export default function Dashboard(): React.JSX.Element {
           </div>
           <div>
             <p className="text-sm text-slate-400 font-medium">Toplam Tahakkuk</p>
-            <h3 className="text-2xl font-bold text-white mt-1">
-              ₺ {stats.totalUcret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+            <h3 className="text-2xl font-bold text-white mt-1" title={`₺ ${stats.totalUcret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`}>
+              {formatAbbreviatedCurrency(stats.totalUcret)}
             </h3>
           </div>
         </div>
@@ -248,15 +263,21 @@ export default function Dashboard(): React.JSX.Element {
             </div>
             <div className="bg-slate-900/40 p-3 rounded-xl border border-white/5 text-center">
               <span className="text-[10px] text-slate-400 uppercase font-bold block">Tahakkuk</span>
-              <span className="text-base font-extrabold text-white">₺{todayStats.totalUcret.toLocaleString('tr-TR')}</span>
+              <span className="text-base font-extrabold text-white" title={`₺ ${todayStats.totalUcret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`}>
+                {formatAbbreviatedCurrency(todayStats.totalUcret)}
+              </span>
             </div>
             <div className="bg-slate-900/40 p-3 rounded-xl border border-white/5 text-center">
               <span className="text-[10px] text-slate-400 uppercase font-bold block">Tahsil Edilen</span>
-              <span className="text-base font-extrabold text-emerald-450">₺{todayStats.totalPaid.toLocaleString('tr-TR')}</span>
+              <span className="text-base font-extrabold text-emerald-400" title={`₺ ${todayStats.totalPaid.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`}>
+                {formatAbbreviatedCurrency(todayStats.totalPaid)}
+              </span>
             </div>
             <div className="bg-slate-900/40 p-3 rounded-xl border border-white/5 text-center col-span-2 sm:col-span-1">
               <span className="text-[10px] text-slate-400 uppercase font-bold block">Kalan Borç</span>
-              <span className="text-base font-extrabold text-amber-450">₺{todayStats.totalUnpaid.toLocaleString('tr-TR')}</span>
+              <span className="text-base font-extrabold text-amber-500" title={`₺ ${todayStats.totalUnpaid.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`}>
+                {formatAbbreviatedCurrency(todayStats.totalUnpaid)}
+              </span>
             </div>
           </div>
         </div>
@@ -279,8 +300,8 @@ export default function Dashboard(): React.JSX.Element {
           </div>
           <div className="text-right">
             <p className="text-xs text-slate-400">Toplam Tutar</p>
-            <h3 className="text-2xl font-extrabold text-amber-400 mt-1">
-              ₺ {stats.unpaidAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+            <h3 className="text-2xl font-extrabold text-amber-400 mt-1" title={`₺ ${stats.unpaidAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`}>
+              {formatAbbreviatedCurrency(stats.unpaidAmount)}
             </h3>
           </div>
         </div>
@@ -304,11 +325,8 @@ export default function Dashboard(): React.JSX.Element {
           </div>
           <div className="text-right">
             <p className="text-xs text-slate-400">Tahsil Edilen Tutar</p>
-            <h3 className="text-2xl font-extrabold text-emerald-400 mt-1">
-              ₺{' '}
-              {(stats.totalUcret - stats.unpaidAmount).toLocaleString('tr-TR', {
-                minimumFractionDigits: 2
-              })}
+            <h3 className="text-2xl font-extrabold text-emerald-400 mt-1" title={`₺ ${(stats.totalUcret - stats.unpaidAmount).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`}>
+              {formatAbbreviatedCurrency(stats.totalUcret - stats.unpaidAmount)}
             </h3>
           </div>
         </div>
@@ -317,16 +335,91 @@ export default function Dashboard(): React.JSX.Element {
       {/* Main Grid: Charts & Recent Slips */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Chart Card */}
-        <div className="glass-card p-6 rounded-2xl lg:col-span-1 flex flex-col justify-between">
-          <div>
-            <h3 className="text-lg font-bold text-white mb-1">Kanallara Göre Sulama</h3>
-            <p className="text-xs text-slate-400 mb-6">En çok sulanan su kanalları ve saatleri.</p>
-
-            {chartData.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-48 text-slate-500 text-sm">
-                Veri bulunmuyor
+        <div className="glass-card p-6 rounded-2xl lg:col-span-1 flex flex-col justify-between relative overflow-hidden">
+          {chartData.length <= 1 ? (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-bold text-white">
+                    {chartData[0]?.kanal_adi && chartData[0]?.kanal_adi !== 'Belirtilmemiş'
+                      ? `${chartData[0].kanal_adi} Analizi`
+                      : 'Kanal Sulama Analizi'}
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Tek kanal üzerinden hassas sulama dökümü.
+                  </p>
+                </div>
+                <div className="px-2.5 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[10px] font-extrabold uppercase rounded-full tracking-wider">
+                  Hassas Mod
+                </div>
               </div>
-            ) : (
+
+              {chartData.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-48 text-slate-500 text-sm">
+                  Kayıtlı sulama verisi bulunmuyor
+                </div>
+              ) : (
+                <div className="space-y-6 mt-4">
+                  <div className="relative p-4 rounded-xl bg-slate-900/30 border border-white/5 flex flex-col items-center justify-center text-center">
+                    <div className="absolute top-2 right-2 text-[10px] font-semibold text-slate-500">
+                      Oran: 100%
+                    </div>
+                    <div className="relative w-28 h-28 flex items-center justify-center my-2">
+                      <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                        <path
+                          className="text-slate-800"
+                          strokeWidth="2.5"
+                          stroke="currentColor"
+                          fill="none"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        <path
+                          className="text-indigo-400"
+                          strokeWidth="2.5"
+                          strokeDasharray="100,100"
+                          strokeLinecap="round"
+                          stroke="url(#canalGradient)"
+                          fill="none"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        <defs>
+                          <linearGradient id="canalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor="#6366f1" />
+                            <stop offset="100%" stopColor="#22d3ee" />
+                          </linearGradient>
+                        </defs>
+                      </svg>
+                      <div className="absolute flex flex-col items-center">
+                        <Droplet className="h-6 w-6 text-indigo-400 animate-pulse" />
+                        <span className="text-xs font-bold text-slate-300 mt-1 max-w-[80px] truncate">
+                          {chartData[0].kanal_adi}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-slate-900/40 p-3 rounded-xl border border-white/5">
+                      <span className="text-[10px] text-slate-400 font-bold block mb-1">HASSAS SÜRE</span>
+                      <span className="text-sm font-extrabold text-cyan-400">
+                        {chartData[0].total_hours.toFixed(3)} sa
+                      </span>
+                    </div>
+                    <div className="bg-slate-900/40 p-3 rounded-xl border border-white/5">
+                      <span className="text-[10px] text-slate-400 font-bold block mb-1">DETAYLI SÜRE</span>
+                      <span className="text-xs font-bold text-white block">
+                        {Math.floor(chartData[0].total_hours)} sa {Math.round((chartData[0].total_hours % 1) * 60)} dk
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div>
+              <h3 className="text-lg font-bold text-white mb-1">Kanallara Göre Sulama</h3>
+              <p className="text-xs text-slate-400 mb-6">En çok sulanan su kanalları ve saatleri.</p>
+
               <div className="space-y-4">
                 {chartData.map((item, idx) => {
                   const percent = (item.total_hours / maxHours) * 100
@@ -346,8 +439,8 @@ export default function Dashboard(): React.JSX.Element {
                   )
                 })}
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           <div className="text-xs text-slate-500 border-t border-slate-800/80 pt-4 mt-6">
             Grafik toplam sulama saatlerini yansıtır.
@@ -392,8 +485,8 @@ export default function Dashboard(): React.JSX.Element {
                         <td className="py-3 px-2 text-right text-indigo-300">
                           {slip.sulama_suresi_saat} sa
                         </td>
-                        <td className="py-3 px-2 text-right font-medium">
-                          ₺ {slip.ucret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                        <td className="py-3 px-2 text-right font-medium text-white" title={`₺ ${slip.ucret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`}>
+                          {formatAbbreviatedCurrency(slip.ucret)}
                         </td>
                         <td className="py-3 px-2 text-center">
                           <span
@@ -452,8 +545,8 @@ export default function Dashboard(): React.JSX.Element {
                         <td className="py-3 px-2 text-right text-indigo-300">
                           {slip.sulama_suresi_saat} sa
                         </td>
-                        <td className="py-3 px-2 text-right font-medium">
-                          ₺ {slip.ucret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                        <td className="py-3 px-2 text-right font-medium text-white" title={`₺ ${slip.ucret.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`}>
+                          {formatAbbreviatedCurrency(slip.ucret)}
                         </td>
                         <td className="py-3 px-2 text-center">
                           <span
