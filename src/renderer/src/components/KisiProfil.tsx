@@ -26,6 +26,8 @@ interface Slip {
   parsel: string
   kanal_adi: string
   ad_soyad: string
+  yazdirildi?: number
+  yazdirilma_tarihi?: string | null
 }
 
 interface Property {
@@ -143,6 +145,7 @@ const renderA5ReceiptContent = (s: any, logo: string | null, name: string, birim
 
       <div className="text-center text-[8px] text-slate-450 pt-4 border-t border-dashed border-slate-300 mt-4 font-mono">
         <p>Bu fiş otomasyon sistemi üzerinden üretilmiştir. Bilgi amaçlıdır.</p>
+        {s.yazdirilma_tarihi && <p className="mt-0.5">Baskı Tarihi: {s.yazdirilma_tarihi}</p>}
       </div>
     </div>
   )
@@ -164,6 +167,7 @@ export default function KisiProfil({ ownerName }: KisiProfilProps): React.JSX.El
       const slipsData = await window.api.dbQuery(
         `
         SELECT s.id, s.sulama_tarihi, s.sulama_suresi_saat, s.ucret, s.odeme_durumu, s.aciklama,
+               s.yazdirildi, s.yazdirilma_tarihi,
                t.mahalle_koy, t.ada, t.parsel, t.kanal_adi,
                g.ad_soyad
         FROM sulamalar s
@@ -260,13 +264,48 @@ export default function KisiProfil({ ownerName }: KisiProfilProps): React.JSX.El
 
   const handlePrintA5Receipt = (slip: Slip) => {
     setPrintingSlip(slip)
-    setTimeout(() => {
-      window.print()
-    }, 150)
+  }
+
+  const handlePrint = async (): Promise<void> => {
+    if (printingSlip) {
+      const printTime = new Date().toLocaleString('tr-TR')
+      try {
+        await window.api.dbRun(
+          'UPDATE sulamalar SET yazdirildi = 1, yazdirilma_tarihi = ? WHERE id = ?',
+          [printTime, printingSlip.id]
+        )
+        setPrintingSlip((prev) =>
+          prev ? { ...prev, yazdirildi: 1, yazdirilma_tarihi: printTime } : null
+        )
+        await loadData()
+      } catch (e) {
+        console.error('Yazdırma durumu güncellenirken hata oluştu:', e)
+      }
+    }
+    window.print()
   }
 
   const handlePrintStatement = () => {
     setShowDebtStatementModal(true)
+  }
+
+  const handlePrintStatementAction = async (): Promise<void> => {
+    const printTime = new Date().toLocaleString('tr-TR')
+    try {
+      const slipIds = slips.map((s) => s.id)
+      if (slipIds.length > 0) {
+        for (const id of slipIds) {
+          await window.api.dbRun(
+            'UPDATE sulamalar SET yazdirildi = 1, yazdirilma_tarihi = ? WHERE id = ?',
+            [printTime, id]
+          )
+        }
+        await loadData()
+      }
+    } catch (e) {
+      console.error('Ekstre yazdırılırken hata oluştu:', e)
+    }
+    window.print()
   }
 
   return (
@@ -426,14 +465,15 @@ export default function KisiProfil({ ownerName }: KisiProfilProps): React.JSX.El
                     <th className="py-2.5 px-2">Tarih</th>
                     <th className="py-2.5 px-2">Konum (Fiş-Seri)</th>
                     <th className="py-2.5 px-2 text-right">Süre (Sa)</th>
-                    <th className="py-2.5 px-2 text-right">Ücret</th>
+                    <th className="py-2.5 px-2 text-right">Tutar</th>
                     <th className="py-2.5 px-2 text-center">Ödeme</th>
+                    <th className="py-2.5 px-2 text-center">Baskı</th>
                     <th className="py-2.5 px-2 text-right">Aksiyonlar</th>
                   </tr>
                 </thead>
                 <tbody>
                   {slips.map((s) => (
-                    <tr key={s.id} className="border-b border-slate-800/40 hover:bg-slate-800/5 text-slate-300">
+                    <tr key={s.id} className="border-b border-slate-800/40 hover:bg-slate-800/5 text-slate-350">
                       <td className="py-2 px-2 text-[11px] whitespace-nowrap">
                         {new Date(s.sulama_tarihi).toLocaleDateString('tr-TR')}
                       </td>
@@ -452,6 +492,19 @@ export default function KisiProfil({ ownerName }: KisiProfilProps): React.JSX.El
                         >
                           {s.odeme_durumu}
                         </span>
+                      </td>
+                      <td className="py-2 px-2 text-center">
+                        {s.yazdirildi === 1 ? (
+                          <span
+                            title={`Yazdırıldı: ${s.yazdirilma_tarihi}`}
+                            className="inline-flex items-center gap-1 text-[10px] text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded-full border border-indigo-500/20 font-medium"
+                          >
+                            <Printer className="h-2.5 w-2.5" />
+                            <span>Evet</span>
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-slate-500">Hayır</span>
+                        )}
                       </td>
                       <td className="py-2 px-2 text-right space-x-1.5 whitespace-nowrap">
                         {s.odeme_durumu === 'Ödenmedi' && (
@@ -479,31 +532,68 @@ export default function KisiProfil({ ownerName }: KisiProfilProps): React.JSX.El
         </div>
       </div>
 
-      {/* 5. Print Modal (A5 Receipt mockup layout for individual printing) */}
+      {/* 5. Print Preview Modal for A5 Receipt (Mockup view popup before printing) */}
       {printingSlip && (
-        <div className="print-only hidden w-full bg-white text-black">
-          <style>{`
-            @media print {
-              @page {
-                size: A5 portrait;
-                margin: 8mm;
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto no-print">
+          <div className="bg-white text-slate-900 w-full max-w-xl rounded-2xl shadow-2xl p-6 flex flex-col justify-between border border-slate-200 my-8 animate-fadeIn">
+            {/* Custom local print media configurations */}
+            <style>{`
+              @media print {
+                @page {
+                  size: A5 portrait;
+                  margin: 8mm;
+                }
+                body * {
+                  visibility: hidden;
+                }
+                .print-receipt-content, .print-receipt-content * {
+                  visibility: visible;
+                }
+                .print-receipt-content {
+                  position: absolute;
+                  left: 0;
+                  top: 0;
+                  width: 100% !important;
+                  max-width: 132mm !important;
+                  margin: 0 auto !important;
+                  padding: 0 !important;
+                  color: black !important;
+                  background: white !important;
+                }
+                .no-print {
+                  display: none !important;
+                }
               }
-              body {
-                background: white !important;
-                color: black !important;
-              }
-              .no-print {
-                display: none !important;
-              }
-              .print-only {
-                display: block !important;
-                width: 100% !important;
-                max-width: 132mm !important;
-                margin: 0 auto !important;
-                padding: 0 !important;
-              }
-            }
-          `}</style>
+            `}</style>
+
+            {/* Ticket Content Screen Preview */}
+            <div className="border border-slate-200 p-6 rounded-xl bg-slate-50/50 print-receipt-content">
+              {renderA5ReceiptContent(printingSlip, kurumLogo, kurumAdi, kurumBirim)}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex space-x-2.5 mt-5 border-t border-slate-100 pt-4 bg-white">
+              <button
+                onClick={handlePrint}
+                className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 px-4 rounded-xl flex items-center justify-center gap-1.5 transition text-xs cursor-pointer shadow-lg shadow-indigo-600/10"
+              >
+                <Printer className="h-4 w-4" />
+                <span>Yazdır (A5 / Yarım A4)</span>
+              </button>
+              <button
+                onClick={() => setPrintingSlip(null)}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 px-5 rounded-xl transition text-xs cursor-pointer"
+              >
+                Kapat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pure A5 layout container specifically designed for paper layout printing */}
+      {printingSlip && (
+        <div className="print-receipt-content hidden w-full bg-white text-black">
           {renderA5ReceiptContent(printingSlip, kurumLogo, kurumAdi, kurumBirim)}
         </div>
       )}
@@ -517,7 +607,7 @@ export default function KisiProfil({ ownerName }: KisiProfilProps): React.JSX.El
               <h3 className="text-sm font-bold text-slate-850">Borç Ekstresi Önizleme (A4)</h3>
               <div className="flex gap-2">
                 <button
-                  onClick={() => window.print()}
+                  onClick={handlePrintStatementAction}
                   className="bg-indigo-650 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shadow-md shadow-indigo-600/10"
                 >
                   <Printer className="h-4 w-4" />
@@ -560,7 +650,7 @@ export default function KisiProfil({ ownerName }: KisiProfilProps): React.JSX.El
                 <div className="text-center pb-4 border-b-2 border-black space-y-1">
                   <h1 className="text-base font-extrabold uppercase tracking-wider">{kurumAdi}</h1>
                   <h2 className="text-xs font-bold text-slate-700">ÖDEME BİLDİRİMİ VE BORÇ DETAYI</h2>
-                  <p className="text-[10px] text-slate-500">Tarih: {new Date().toLocaleDateString('tr-TR')}</p>
+                  <p className="text-[10px] text-slate-550">Tarih: {new Date().toLocaleDateString('tr-TR')}</p>
                 </div>
 
                 {/* Recipient info */}

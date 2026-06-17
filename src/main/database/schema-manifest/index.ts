@@ -63,5 +63,22 @@ export const manifests: AppVersionManifest[] = [
         ]
       }
     ]
+  },
+  {
+    app: '1.0.0-beta.15',
+    schema_min: 3,
+    schema_max: 4,
+    release_date: '2026-06-17',
+    changes: [
+      {
+        schema: 4,
+        type: 'update',
+        description: 'Sulamalar tablosuna yazdirildi ve yazdirilma_tarihi ekleme',
+        columns_added: [
+          { table: 'sulamalar', column: 'yazdirildi' },
+          { table: 'sulamalar', column: 'yazdirilma_tarihi' }
+        ]
+      }
+    ]
   }
 ]

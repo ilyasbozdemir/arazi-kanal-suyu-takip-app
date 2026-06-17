@@ -11,7 +11,9 @@ export const sulamalar = {
     { name: 'aciklama', type: 'TEXT' },
     { name: 'tapu_sahibi', type: 'TEXT' },
     { name: 'fis_no', type: 'TEXT' },
-    { name: 'seri_no', type: 'TEXT' }
+    { name: 'seri_no', type: 'TEXT' },
+    { name: 'yazdirildi', type: 'INTEGER', default: '0' },
+    { name: 'yazdirilma_tarihi', type: 'TEXT' }
   ],
   constraints: [
     "FOREIGN KEY (tasinmaz_id) REFERENCES tasinmazlar(id) ON DELETE SET NULL",

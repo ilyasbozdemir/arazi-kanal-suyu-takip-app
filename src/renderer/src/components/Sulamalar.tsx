@@ -41,6 +41,8 @@ interface Sulama {
   tapu_sahibi: string
   fis_no?: string
   seri_no?: string
+  yazdirildi?: number
+  yazdirilma_tarihi?: string | null
   // Joined fields
   ada: string
   parsel: string
@@ -668,12 +670,23 @@ export default function Sulamalar({
     setShowFormPanel(false)
   }
 
-  const handlePrint = (): void => {
+  const handlePrint = async (): Promise<void> => {
+    if (showPrintModal) {
+      const printTime = new Date().toLocaleString('tr-TR')
+      try {
+        await window.api.dbRun(
+          'UPDATE sulamalar SET yazdirildi = 1, yazdirilma_tarihi = ? WHERE id = ?',
+          [printTime, showPrintModal.id]
+        )
+        setShowPrintModal((prev) =>
+          prev ? { ...prev, yazdirildi: 1, yazdirilma_tarihi: printTime } : null
+        )
+        await loadData()
+      } catch (e) {
+        console.error('Yazdırma durumu güncellenirken hata oluştu:', e)
+      }
+    }
     window.print()
-  }
-
-  const handleFisNoChange = (val: string) => {
-    setFisNoGiris(val)
   }
 
   // Search and Filter Slips
@@ -910,8 +923,13 @@ export default function Sulamalar({
                             editingId === s.id ? 'bg-indigo-500/5 border-indigo-500/30' : ''
                           }`}
                         >
-                          <div className="col-span-2 whitespace-nowrap truncate pr-1 text-xs">
-                            {new Date(s.sulama_tarihi).toLocaleDateString('tr-TR')}
+                          <div className="col-span-2 whitespace-nowrap truncate pr-1 text-xs flex items-center gap-1.5">
+                            <span>{new Date(s.sulama_tarihi).toLocaleDateString('tr-TR')}</span>
+                            {s.yazdirildi === 1 && (
+                              <span title={`Yazdırıldı: ${s.yazdirilma_tarihi || ''}`}>
+                                <Printer className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                              </span>
+                            )}
                           </div>
                           <div className="col-span-3 truncate pr-2">
                             <span className="font-semibold text-white block truncate" title={s.tapu_sahibi}>
@@ -1368,14 +1386,15 @@ export default function Sulamalar({
               <thead>
                 <tr className="border-b border-slate-800 font-semibold text-slate-400 uppercase tracking-wider text-[10px]">
                   <th className="py-2.5 px-1.5 w-[11%]">Tarih</th>
-                  <th className="py-2.5 px-1.5 w-[20%]">Tapu Sahibi</th>
+                  <th className="py-2.5 px-1.5 w-[17%]">Tapu Sahibi</th>
                   <th className="py-2.5 px-1.5 w-[9%]">Fiş No</th>
                   <th className="py-2.5 px-1.5 w-[6%]">Seri No</th>
-                  <th className="py-2.5 px-1.5 w-[15%]">Görevli</th>
+                  <th className="py-2.5 px-1.5 w-[13%]">Görevli</th>
                   <th className="py-2.5 px-1.5 w-[8%] text-right">Süre (Saat)</th>
                   <th className="py-2.5 px-1.5 w-[8%] text-right">Ücret (₺)</th>
                   <th className="py-2.5 px-1.5 w-[10%] text-center">Ödeme Durumu</th>
-                  <th className="py-2.5 px-1.5 w-[10%]">Açıklama</th>
+                  <th className="py-2.5 px-1.5 w-[7%] text-center">Yazdırıldı</th>
+                  <th className="py-2.5 px-1.5 w-[8%]">Açıklama</th>
                   <th className="py-2.5 px-1.5 w-[3%] text-right">İşlem</th>
                 </tr>
               </thead>
@@ -1428,7 +1447,7 @@ export default function Sulamalar({
                             />
                           </td>
                           {/* Tapu Sahibi */}
-                          <td className="p-1" style={{ width: '20%' }}>
+                          <td className="p-1" style={{ width: '17%' }}>
                             <input
                               type="text"
                               className="bg-slate-950/20 hover:bg-slate-900 focus:bg-slate-900 border border-transparent focus:border-indigo-500 rounded px-1 py-1 w-full text-xs text-slate-300 font-bold"
@@ -1461,7 +1480,7 @@ export default function Sulamalar({
                             />
                           </td>
                           {/* Görevli */}
-                          <td className="p-1" style={{ width: '15%' }}>
+                          <td className="p-1" style={{ width: '13%' }}>
                             <select
                               className="bg-slate-950/20 hover:bg-slate-900 focus:bg-slate-900 border border-transparent focus:border-indigo-500 rounded px-1 py-1 w-full text-xs text-slate-300"
                               value={s.gorevli_id}
@@ -1524,8 +1543,29 @@ export default function Sulamalar({
                               </option>
                             </select>
                           </td>
+                          {/* Yazdırıldı */}
+                          <td className="p-1 text-center font-semibold text-xs" style={{ width: '7%' }}>
+                            {s.yazdirildi === 1 ? (
+                              <button
+                                onClick={() => setShowPrintModal(s)}
+                                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition cursor-pointer"
+                                title={`Yazdırıldı: ${s.yazdirilma_tarihi || ''}`}
+                              >
+                                <Printer className="w-3 h-3" />
+                                <span className="text-[10px]">✓</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => setShowPrintModal(s)}
+                                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700 hover:text-slate-200 transition cursor-pointer"
+                                title="Yazdırılmadı"
+                              >
+                                <Printer className="w-3 h-3" />
+                              </button>
+                            )}
+                          </td>
                           {/* Açıklama */}
-                          <td className="p-1" style={{ width: '10%' }}>
+                          <td className="p-1" style={{ width: '8%' }}>
                             <input
                               type="text"
                               placeholder="Açıklama girin..."
@@ -1570,7 +1610,7 @@ export default function Sulamalar({
                     />
                   </td>
                   {/* Tapu Sahibi */}
-                  <td className="p-1.5" style={{ width: '20%' }}>
+                  <td className="p-1.5" style={{ width: '17%' }}>
                     <input
                       type="text"
                       list="sulamalar-excel-owners"
@@ -1612,7 +1652,7 @@ export default function Sulamalar({
                     />
                   </td>
                   {/* Görevli */}
-                  <td className="p-1.5" style={{ width: '15%' }}>
+                  <td className="p-1.5" style={{ width: '13%' }}>
                     <select
                       className="bg-slate-900 border border-indigo-500/25 focus:border-indigo-500 rounded px-1.5 py-1 w-full text-xs text-slate-300"
                       value={newRow.gorevli_id}
@@ -1673,8 +1713,10 @@ export default function Sulamalar({
                       </option>
                     </select>
                   </td>
+                  {/* Yazdırıldı (Placeholder) */}
+                  <td className="p-1.5" style={{ width: '7%' }}></td>
                   {/* Açıklama */}
-                  <td className="p-1.5" style={{ width: '10%' }}>
+                  <td className="p-1.5" style={{ width: '8%' }}>
                     <input
                       type="text"
                       placeholder="Açıklama..."
